@@ -1,3 +1,10 @@
+#include <sstream>
+#include <string>
+#include "../Lexer/CLangLexer.hpp"
+
 int main(int, char**) {
-	return 0;
+  std::wstringstream source(L"(hi)");
+  Cation::CLangLexer lexer;
+  lexer.GetToken(source);
+  return 0;
 }

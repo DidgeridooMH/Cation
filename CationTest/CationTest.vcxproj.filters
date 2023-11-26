@@ -15,22 +15,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\CLI\Main.cpp">
+    <ClCompile Include="CLangLexerTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Lexer\CLangLexer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Source\Lexer\CLangToken.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Source\Lexer\CLangLexer.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\Lexer\CLangToken.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
