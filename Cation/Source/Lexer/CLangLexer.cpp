@@ -14,11 +14,50 @@ namespace Cation {
     {L"{", CLangToken::LeftDragon},
     {L"}", CLangToken::RightDragon},
     {L".", CLangToken::Period},
-    {L"...", CLangToken::Variadic}
+    {L"->", CLangToken::Arrow},
+    {L"++", CLangToken::Increment},
+    {L"--", CLangToken::Decrement},
+    {L"*", CLangToken::Star},
+    {L"+", CLangToken::Add},
+    {L"-", CLangToken::Subtract},
+    {L"~", CLangToken::Tilde},
+    {L"!", CLangToken::Exclamation},
+    {L"/", CLangToken::Divide},
+    {L"%", CLangToken::Modulo},
+    {L"<<", CLangToken::ShiftLeft},
+    {L">>", CLangToken::ShiftRight},
+    {L"<", CLangToken::LessThan},
+    {L">", CLangToken::GreaterThan},
+    {L"<=", CLangToken::LessEqual},
+    {L">=", CLangToken::GreaterEqual},
+    {L"==", CLangToken::Equal},
+    {L"!=", CLangToken::NotEqual},
+    {L"&", CLangToken::And},
+    {L"|", CLangToken::Or},
+    {L"^", CLangToken::Xor},
+    {L"&&", CLangToken::LogicalAnd},
+    {L"||", CLangToken::LogicalOr},
+    {L"?", CLangToken::TernaryProposition},
+    {L":", CLangToken::TernaryDecision},
+    {L";", CLangToken::StatementDelimiter},
+    {L"...", CLangToken::Variadic},
+    {L"=", CLangToken::Assign},
+    {L"*=", CLangToken::MultiplyAssign},
+    {L"/=", CLangToken::DivideAssign},
+    {L"%=", CLangToken::ModuloAssign},
+    {L"+=", CLangToken::AddAssign},
+    {L"-=", CLangToken::SubtractAssign},
+    {L"<<=", CLangToken::LeftShiftAssign},
+    {L">>=", CLangToken::RightShiftAssign},
+    {L"&=", CLangToken::AndAssign},
+    {L"^=", CLangToken::XorAssign},
+    {L"|=", CLangToken::OrAssign},
+    {L",", CLangToken::Comma},
+    {L"#", CLangToken::Preprocessor},
+    {L"##", CLangToken::PreprocessorConcat}
   };
 
-  CLangLexer::CLangLexer() : m_currentLine(1), m_currentColumn(1) {
-  }
+  CLangLexer::CLangLexer() : m_currentLine(1), m_currentColumn(1) { }
 
   CLangToken CLangLexer::GetToken(std::wistream& source) {
     SkipWhitespace(source);
