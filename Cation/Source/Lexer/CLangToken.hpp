@@ -2,20 +2,24 @@
 
 #include <string>
 
-namespace Cation {
+namespace Cation
+{
   /// <summary>
   /// Token emitted by the lexer. These tokens are defined in the C language
   /// grammar. Identifiers and constants contain the text they were parsed
   /// with.
   /// </summary>
-  class CLangToken {
+  class CLangToken
+  {
   public:
-    enum TokenType {
+    enum TokenType
+    {
       NoToken,
+      BadToken,
       Keyword,
-      Identifier,
       Constant,
       StringLiteral,
+      Identifier,
       LeftBracket,
       RightBracket,
       LeftParenthesis,
@@ -77,22 +81,26 @@ namespace Cation {
       size_t column = 0);
 
     /// <returns>The type of the token.</returns>
-    inline TokenType GetType() const {
+    inline TokenType GetType() const
+    {
       return m_type;
     }
 
     /// <returns>Raw string used to create token.</returns>
-    inline const std::wstring& GetContent() const {
+    inline const std::wstring& GetContent() const
+    {
       return m_content;
     }
 
     /// <returns>1-indexed line of the file token was created from.</returns>
-    inline size_t GetLine() const {
+    inline size_t GetLine() const
+    {
       return m_line;
     }
 
     /// <returns>1-indexed column of the file token was created from.</returns>
-    inline size_t GetColumn() const {
+    inline size_t GetColumn() const
+    {
       return m_column;
     }
 

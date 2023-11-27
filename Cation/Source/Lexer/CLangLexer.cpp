@@ -1,12 +1,15 @@
-#include <cctype>
 #include <istream>
 #include <string>
 #include <unordered_map>
 #include "CLangLexer.hpp"
 #include "CLangToken.hpp"
 
-namespace Cation {
-  static const std::unordered_map<std::wstring, CLangToken::TokenType> PunctuatorSet = {
+namespace Cation
+{
+  using KeyToTokenMap =
+    std::unordered_map<std::wstring, CLangToken::TokenType>;
+
+  static const KeyToTokenMap PunctuatorSet = {
     {L"[", CLangToken::LeftBracket},
     {L"]", CLangToken::RightBracket},
     {L"(", CLangToken::LeftParenthesis},
@@ -57,53 +60,154 @@ namespace Cation {
     {L"##", CLangToken::PreprocessorConcat}
   };
 
-  CLangLexer::CLangLexer() : m_currentLine(1), m_currentColumn(1) { }
+  CLangLexer::CLangLexer() : m_currentLine(1), m_currentColumn(1)
+  {
+  }
 
-  CLangToken CLangLexer::GetToken(std::wistream& source) {
+  CLangToken CLangLexer::GetToken(std::wistream& source)
+  {
     SkipWhitespace(source);
 
-    if (source.eof()) {
+    if (!source.good())
+    {
       return CLangToken(CLangToken::NoToken);
     }
 
-    std::wstring tokenBuffer;
-    tokenBuffer += source.get();
+    size_t currentColumn = m_currentColumn;
+    std::wstring tokenBuffer{ source.get() };
+    m_currentColumn += 1;
 
     CLangToken::TokenType tokenType = CLangToken::NoToken;
-    if (PunctuatorSet.contains(tokenBuffer)) {
+    if (PunctuatorSet.contains(tokenBuffer))
+    {
       tokenType = ParsePunctuator(source, tokenBuffer);
     }
+    else if (tokenBuffer[0] == '\'')
+    {
 
-    size_t column = m_currentColumn;
-    m_currentColumn += tokenBuffer.size();
+    }
+    else if (tokenBuffer[0] == '"')
+    {
 
-    return CLangToken(tokenType, tokenBuffer, m_currentLine, column);
+    }
+    else if (iswdigit(tokenBuffer[0]))
+    {
+
+    }
+    else
+    {
+      tokenType = ParseIdentifier(source, tokenBuffer);
+    }
+
+    return CLangToken(tokenType, tokenBuffer, m_currentLine, currentColumn);
   }
 
-  void CLangLexer::SkipWhitespace(std::wistream& source) {
-    while (!source.eof() && isspace(source.peek())) {
+  void CLangLexer::SkipWhitespace(std::wistream& source)
+  {
+    while (source.good() &&
+      source.peek() != std::char_traits<wchar_t>::eof() &&
+      iswspace(source.peek()))
+    {
       m_currentColumn += 1;
-      if (source.peek() == '\n') {
+      if (source.peek() == '\n')
+      {
         m_currentLine += 1;
         m_currentColumn = 1;
       }
-      source.get();
+      source.ignore();
     }
   }
 
   CLangToken::TokenType CLangLexer::ParsePunctuator(std::wistream& source,
-    std::wstring& buffer) {
-    while (!source.eof()) {
-      wchar_t lookAhead = source.get();
-      buffer += lookAhead;
+    std::wstring& buffer)
+  {
+    while (source.good())
+    {
+      buffer += source.get();
+      m_currentColumn += 1;
 
       if (!PunctuatorSet.contains(buffer) &&
-        !(buffer == L".." && source.peek() == '.')) {
+        !(buffer == L".." && source.peek() == '.'))
+      {
         buffer.pop_back();
         source.unget();
+        m_currentColumn -= 1;
         break;
       }
     }
     return PunctuatorSet.at(buffer);
+  }
+
+  CLangToken::TokenType CLangLexer::ParseIdentifier(std::wistream& source,
+    std::wstring& buffer)
+  {
+    // If we need to parse a carriage, we want to do a look ahead for the
+    // carriage code.
+    if (buffer.back() == '\\')
+    {
+      buffer.pop_back();
+      source.unget();
+      m_currentColumn -= 1;
+    }
+
+    while (source.good() &&
+      source.peek() != std::char_traits<wchar_t>::eof() &&
+      !PunctuatorSet.contains(std::wstring{ source.peek() }) &&
+      source.peek() != '"' && source.peek() != '\'')
+    {
+      buffer += source.get();
+      m_currentColumn += 1;
+      if (buffer.back() == '\\')
+      {
+        buffer.pop_back();
+
+        if (!ParseUniversalCharacter(source, buffer))
+        {
+          return CLangToken::BadToken;
+        }
+      }
+    }
+    return CLangToken::Identifier;
+  }
+
+  bool CLangLexer::ParseUniversalCharacter(std::wistream& source,
+    std::wstring& buffer)
+  {
+    constexpr size_t Utf16CodeSize = 4;
+    constexpr size_t Utf32CodeSize = 8;
+
+    if (!source.good() || (source.peek() != 'U' && source.peek() != 'u'))
+    {
+      return false;
+    }
+
+    size_t codeSize = source.get() == 'u' ? Utf16CodeSize : Utf32CodeSize;
+    std::wstring unicodeCharacter(codeSize, '0');
+    source.read(unicodeCharacter.data(), codeSize);
+    m_currentColumn += codeSize;
+
+    if (source.fail() ||
+      std::find_if(unicodeCharacter.begin(), unicodeCharacter.end(),
+        [](wchar_t c)
+        {
+          return !iswdigit(c) && towlower(c) < 'a' && towlower(c) > 'f';
+        }) != unicodeCharacter.end())
+    {
+      return false;
+    }
+
+    uint32_t codepoint = std::stoi(unicodeCharacter, nullptr, 16);
+    if (codeSize == Utf16CodeSize || codepoint < 0x10000)
+    {
+      buffer += static_cast<wchar_t>(codepoint);
+    }
+    else
+    {
+      codepoint -= 0x10000;
+      buffer += static_cast<wchar_t>(((codepoint >> 10) & 0x3FF) | 0xD800);
+      buffer += static_cast<wchar_t>((codepoint & 0x3FF) | 0xDC00);
+    }
+
+    return true;
   }
 }

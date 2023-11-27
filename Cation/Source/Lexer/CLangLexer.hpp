@@ -4,7 +4,9 @@
 #include <string>
 #include "CLangToken.hpp"
 
-namespace Cation {
+// TODO: Look into using exceptions for parsing errors.
+namespace Cation
+{
   /// <summary>
   /// C language lexer. Parses a raw file or string stream into tokens dfiend
   /// in the C language grammar. Only metadata about a stream is held by the
@@ -31,9 +33,13 @@ namespace Cation {
     CLangToken GetToken(std::wistream& source);
 
   private:
-    void SkipWhitespace(std::wistream& source);
     CLangToken::TokenType ParsePunctuator(std::wistream& source,
       std::wstring& buffer);
+    CLangToken::TokenType ParseIdentifier(std::wistream& source,
+      std::wstring& buffer);
+    bool ParseUniversalCharacter(std::wistream& source, std::wstring& buffer);
+
+    void SkipWhitespace(std::wistream& source);
 
     size_t m_currentLine;
     size_t m_currentColumn;
