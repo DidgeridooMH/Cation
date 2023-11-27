@@ -203,6 +203,7 @@ namespace CLangLexerTest
 
   TEST_IDENT_GET_TOKEN_W_RESULT(Universal4, L"\\u2343abc", L"\u2343abc");
   TEST_IDENT_GET_TOKEN_W_RESULT(Universal8, L"\\U00029617abc", L"\U00029617abc");
+  TEST_IDENT_GET_TOKEN_W_RESULT(Universal8NoHigh, L"\\U00009617abc", L"\U00009617abc");
   TEST_IDENT_GET_TOKEN_W_RESULT(Universal4Inside, L"hello\\u2343there", L"hello\u2343there");
   TEST_IDENT_GET_TOKEN_W_RESULT(Universal8Inside, L"hello\\U00029617there", L"hello\U00029617there");
 }
