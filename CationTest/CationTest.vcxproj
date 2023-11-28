@@ -67,7 +67,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
       <AdditionalLibraryDirectories>G:\Projects\Cation\Cation\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>CLangKeywords.obj;CLangPunctuators.obj;CLangLexer.obj;CLangToken.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>CLangKeywords.obj;CLangPunctuators.obj;CLangLexer.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

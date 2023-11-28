@@ -251,4 +251,118 @@ namespace CLangLexerTest
   TEST_GET_TOKEN(Keyword, NoReturn, L"_Noreturn");
   TEST_GET_TOKEN(Keyword, StaticAssert, L"_Static_assert");
   TEST_GET_TOKEN(Keyword, ThreadLocal, L"_Thread_local");
+
+#define TEST_GET_TOKEN_CONSTANT(name, testStr, resultStr, tokenType) \
+  TEST(GetToken, NumericConstant ## name)                           \
+  {                                                                 \
+    Cation::CLangLexer lexer;                                       \
+    std::wstringstream testStream(testStr);                         \
+                                                                    \
+    Cation::CLangToken token = lexer.GetToken(testStream);          \
+    std::wstring remaining;                                         \
+    testStream >> remaining;                                        \
+                                                                    \
+    EXPECT_EQ(token.type, Cation::CLangTokenType::tokenType); \
+    EXPECT_EQ(token.content, resultStr);                            \
+    EXPECT_EQ(token.line, 1);                                       \
+    EXPECT_EQ(token.column, 1);                                     \
+    EXPECT_TRUE(remaining.empty());                                 \
+  }
+
+#define TEST_GET_TOKEN_CONSTANT_INTEGER(name, testStr, resultStr) \
+  TEST_GET_TOKEN_CONSTANT(name, testStr, resultStr, IntegerConstant)
+
+#define TEST_GET_TOKEN_CONSTANT_FLOAT(name, testStr, resultStr) \
+  TEST_GET_TOKEN_CONSTANT(name, testStr, resultStr, FloatConstant)
+
+#define TEST_GET_TOKEN_THROW(name, testStr)            \
+  TEST(GetToken, NumericConstant ## name)                           \
+  {                                                                 \
+    Cation::CLangLexer lexer;                                       \
+    std::wstringstream testStream(testStr);                         \
+                                                                    \
+    EXPECT_THROW((void)lexer.GetToken(testStream), Cation::ParsingException); \
+  }
+
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinaryZero, L"0b0", L"0b0");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinaryOne, L"0b1", L"0b1");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinaryCommon, L"0b101", L"0b101");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinaryBigLetter, L"0B1", L"0b1");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixU, L"0B1U", L"0b1u");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixu, L"0B1u", L"0b1u");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixL, L"0B1L", L"0b1l");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixl, L"0B1l", L"0b1l");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixUL, L"0B1ul", L"0b1ul");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixLU, L"0B1lu", L"0b1lu");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixLL, L"0B1ll", L"0b1ll");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixULL, L"0B1ull", L"0b1ull");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(BinarySuffixLLU, L"0B1llu", L"0b1llu");
+  TEST_GET_TOKEN_THROW(BinaryBadNum, L"0b21");
+  TEST_GET_TOKEN_THROW(BinaryBadSuffix, L"0b1A");
+  TEST_GET_TOKEN_THROW(BinarySuffixUU, L"0b1UU");
+  TEST_GET_TOKEN_THROW(BinarySuffixLUL, L"0b2LUL");
+
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexZero, L"0x0", L"0x0");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexOne, L"0x1", L"0x1");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexCommon, L"0xDED", L"0xded");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexBigLetter, L"0X1", L"0x1");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixU, L"0x1U", L"0x1u");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixu, L"0x1u", L"0x1u");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixL, L"0x1L", L"0x1l");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixl, L"0x1l", L"0x1l");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixUL, L"0x1ul", L"0x1ul");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixLU, L"0x1lu", L"0x1lu");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixLL, L"0x1ll", L"0x1ll");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixULL, L"0x1ull", L"0x1ull");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixLLU, L"0x1llu", L"0x1llu");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPoint, L"0xDED.ADp3", L"0xded.adp3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNoBase, L"0x.ADp3", L"0x.adp3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNoFraction, L"0x1.p3", L"0x1.p3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointLongExponent, L"0x.ADp323", L"0x.adp323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointUppercaseExponent, L"0x.ADP323", L"0x.adp323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointZeroExponent, L"0xded.ADp0", L"0xded.adp0");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointPositiveExponent, L"0xded.ADp+323", L"0xded.adp+323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNegativeExponent, L"0xded.ADp-323", L"0xded.adp-323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixF, L"0xDED.ADp3F", L"0xded.adp3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixf, L"0xDED.ADp3f", L"0xded.adp3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixL, L"0xDED.ADp3L", L"0xded.adp3l");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixl, L"0xDED.ADp3l", L"0xded.adp3l");
+  TEST_GET_TOKEN_THROW(HexBadSuffix, L"0x21Z");
+  TEST_GET_TOKEN_THROW(HexSuffixUU, L"0xaEUU");
+  TEST_GET_TOKEN_THROW(HexSuffixLUL, L"0xdelul");
+  TEST_GET_TOKEN_THROW(HexDecimalOnly, L"0x3.");
+  TEST_GET_TOKEN_THROW(HexNoBaseNoFraction, L"0x.p3");
+  TEST_GET_TOKEN_THROW(HexNoExponent, L"0x12.12p");
+
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalZero, L"0", L"0");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalOne, L"1", L"1");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalCommon, L"145", L"145");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixU, L"1U", L"1u");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixu, L"1u", L"1u");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixL, L"1L", L"1l");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixl, L"1l", L"1l");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixUL, L"1ul", L"1ul");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLU, L"1lu", L"1lu");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLL, L"1ll", L"1ll");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixULL, L"1ull", L"1ull");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLLU, L"1llu", L"1llu");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNoFraction, L"12e3", L"12e3");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointZeroExponent, L"12e0", L"12e0");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointPositiveExponent, L"12e+23", L"12e+23");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNegativeExponent, L"12e-23", L"12e-23");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalZeroExponent, L"0e3", L"0e3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalZeroFloat, L"0.0", L"0.0");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalZeroFloatNoFraction, L"0.", L"0.");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPoint, L"1434.23e3", L"1434.23e3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNoBase, L".12", L".12");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNoExponent, L"12.0", L"12.0");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointLongExponent, L"12.0e123", L"12.0e123");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointUppercaseExponent, L"12.0E123", L"12.0e123");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixF, L"23.3F", L"23.3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixf, L"23.3f", L"23.3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixL, L"23.3L", L"23.3l");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixl, L"23.3l", L"23.3l");
+  TEST_GET_TOKEN_THROW(DecimalBadSuffix, L"12.0Z");
+  TEST_GET_TOKEN_THROW(DecimalSuffixUU, L"12UU");
+  TEST_GET_TOKEN_THROW(DecimalSuffixLUL, L"12lul");
 }

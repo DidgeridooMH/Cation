@@ -8,8 +8,8 @@ namespace Cation
   enum class CLangTokenType
   {
     NoToken,
-    BadToken,
-    NumericConstant,
+    IntegerConstant,
+    FloatConstant,
     StringLiteral,
     Identifier,
     LeftBracket,

@@ -7,6 +7,12 @@
 
 namespace Cation
 {
+  ParsingException::ParsingException(std::wstring message,
+    size_t column, size_t line)
+    : message(message), column(column), line(line)
+  {
+  }
+
   CLangLexer::CLangLexer() : m_currentLine(1), m_currentColumn(1)
   {
   }
@@ -21,33 +27,36 @@ namespace Cation
       return {};
     }
 
-    if (PunctuatorMap.contains(std::wstring{ source.peek() }))
+    // Corner case for floating point that can be either a period or start of a
+    // number.
+    source.ignore();
+    wchar_t lookAhead = source.peek();
+    source.unget();
+
+    if (iswdigit(source.peek()) ||
+      (source.peek() == '.' && iswdigit(lookAhead)))
+    {
+      return ParseNumericalConstant(source);
+    }
+    else if (PunctuatorMap.contains(std::wstring{ source.peek() }))
     {
       return ParsePunctuator(source);
     }
     else if (source.peek() == '\'')
     {
-
+      // TODO
     }
     else if (source.peek() == '"')
     {
-
-    }
-    else if (iswdigit(source.peek()))
-    {
-
+      // TODO
     }
     else
     {
       return ParseIdentifier(source);
     }
 
-    return CLangToken{
-      .type = CLangTokenType::BadToken,
-      .content = std::format(L"Unknown token: {}", source.peek()),
-      .line = m_currentLine,
-      .column = m_currentColumn
-    };
+    throw ParsingException(std::format(L"Unknown token {} found.",
+      source.peek()), m_currentColumn, m_currentLine);
   }
 
   void CLangLexer::SkipWhitespace(std::wistream& source)
@@ -112,10 +121,8 @@ namespace Cation
         std::wstring uChar = ParseUniversalCharacter(source);
         if (uChar.empty())
         {
-          return CLangToken{
-            .type = CLangTokenType::BadToken,
-            .content = L"Malformatted universal character"
-          };
+          throw ParsingException(L"Malformatted universal character",
+            token.column, token.line);
         }
         token.content += uChar;
       }
@@ -170,5 +177,249 @@ namespace Cation
     }
 
     return buffer;
+  }
+
+  CLangToken CLangLexer::ParseNumericalConstant(std::wistream& source)
+  {
+    CLangToken token = {
+      .type = CLangTokenType::IntegerConstant,
+      .line = m_currentLine,
+      .column = m_currentColumn
+    };
+
+    // TODO: A better stream needs to be made.
+    source.ignore();
+    wchar_t lookAhead = towlower(source.peek());
+    source.unget();
+
+    if (source.peek() == '0' && lookAhead == 'b')
+    {
+      token.content += source.get();
+      token.content += towlower(source.get());
+      m_currentColumn += 2;
+      token.content += ParseBinaryConstant(source);
+    }
+    else if (source.peek() == '0' && lookAhead == 'x')
+    {
+      token.content += source.get();
+      token.content += towlower(source.get());
+      m_currentColumn += 2;
+
+      const auto& [isFloatingPoint, content] = ParseFloatableConstant(source,
+        &CLangLexer::ParseHexadecimalSequence, 'p', true);
+      token.content += content;
+      if (isFloatingPoint)
+      {
+        token.type = CLangTokenType::FloatConstant;
+      }
+    }
+    else
+    {
+      const auto& [isFloatingPoint, content] = ParseFloatableConstant(source,
+        &CLangLexer::ParseIntegerSequence, 'e', false);
+      token.content += content;
+      if (isFloatingPoint)
+      {
+        token.type = CLangTokenType::FloatConstant;
+      }
+    }
+
+    if (token.type == CLangTokenType::IntegerConstant)
+    {
+      token.content += ParseIntegerSuffix(source);
+    }
+    else
+    {
+      token.content += ParseFloatSuffix(source);
+    }
+
+    return token;
+  }
+
+  std::wstring CLangLexer::ParseBinaryConstant(std::wistream& source)
+  {
+    std::wstring buffer;
+    while (source.good() &&
+      source.peek() != std::char_traits<wchar_t>::eof() &&
+      iswdigit(source.peek()))
+    {
+      buffer += source.get();
+      m_currentColumn += 1;
+      if (buffer.back() != '0' && buffer.back() != '1')
+      {
+        throw ParsingException(
+          std::format(L"{} is not a valid binary number.", buffer),
+          m_currentColumn, m_currentLine);
+      }
+    }
+
+    if (buffer.empty())
+    {
+      throw ParsingException(L"Expected binary number.", m_currentColumn,
+        m_currentLine);
+    }
+
+    return buffer;
+  }
+
+  std::tuple<bool, std::wstring> CLangLexer::ParseFloatableConstant(
+    std::wistream& source,
+     std::wstring(CLangLexer::* parser)(std::wistream&),
+    char exponentDelimiter, bool requireExponent)
+  {
+    std::wstring buffer;
+    bool isFloatingPoint = false;
+
+    if (source.peek() != '.')
+    {
+      buffer += (this->*parser)(source);
+    }
+
+    if (source.peek() == '.')
+    {
+      isFloatingPoint = true;
+
+      buffer += source.get();
+      m_currentColumn += 1;
+
+      try
+      {
+        buffer += (this->*parser)(source);
+      }
+      catch (const ParsingException& e)
+      {
+        if (buffer == L".")
+        {
+          throw e;
+        }
+      }
+    }
+
+    if (towlower(source.peek()) == exponentDelimiter)
+    {
+      buffer += towlower(source.get());
+      m_currentColumn += 1;
+
+      if (source.peek() == '-' || source.peek() == '+')
+      {
+        buffer += source.get();
+        m_currentColumn += 1;
+      }
+
+      buffer += ParseIntegerSequence(source);
+    }
+    else if (isFloatingPoint && requireExponent)
+    {
+      throw ParsingException(L"Invalid numerical constant.", m_currentColumn,
+        m_currentLine);
+    }
+
+    return { isFloatingPoint, buffer };
+  }
+
+  std::wstring CLangLexer::ParseHexadecimalSequence(std::wistream& source)
+  {
+    std::wstring buffer;
+    while (source.good() &&
+      source.peek() != std::char_traits<wchar_t>::eof() &&
+      iswxdigit(source.peek()))
+    {
+      buffer += towlower(source.get());
+      m_currentColumn += 1;
+    }
+
+    if (buffer.empty())
+    {
+      throw ParsingException(L"Expected hexadecimal number.", m_currentColumn,
+        m_currentLine);
+    }
+
+    return buffer;
+  }
+
+  std::wstring CLangLexer::ParseIntegerSequence(std::wistream& source)
+  {
+    std::wstring buffer;
+    while (source.good() &&
+      source.peek() != std::char_traits<wchar_t>::eof() &&
+      iswdigit(source.peek()))
+    {
+      buffer += source.get();
+      m_currentColumn += 1;
+    }
+
+    if (buffer.empty())
+    {
+      throw ParsingException(L"Expected decimal number.", m_currentColumn,
+        m_currentLine);
+    }
+
+    return buffer;
+  }
+
+  std::wstring CLangLexer::ParseIntegerSuffix(std::wistream& source)
+  {
+    std::wstring buffer;
+    bool signUsed = false;
+    bool sizeUsed = false;
+    while (source.good() &&
+      source.peek() != std::char_traits<wchar_t>::eof() &&
+      iswalpha(source.peek()))
+    {
+      buffer += towlower(source.get());
+      m_currentColumn += 1;
+
+      if (buffer.back() == 'u')
+      {
+        if (signUsed)
+        {
+          throw ParsingException(
+            std::format(L"Invalid suffix for integer constant {}",
+              source.get()), m_currentColumn, m_currentLine);
+        }
+        signUsed = true;
+      }
+      else if (buffer.back() == 'l')
+      {
+        if (sizeUsed && buffer[buffer.size() - 2] != 'l')
+        {
+          throw ParsingException(
+            std::format(L"Invalid suffix for integer constant {}",
+              source.get()), m_currentColumn, m_currentLine);
+        }
+        sizeUsed = true;
+      }
+      else
+      {
+        throw ParsingException(
+          std::format(L"Invalid suffix for integer constant {}",
+            source.get()), m_currentColumn, m_currentLine);
+      }
+    }
+    return buffer;
+  }
+
+  std::wstring CLangLexer::ParseFloatSuffix(std::wistream& source)
+  {
+    if (towlower(source.peek()) == 'l')
+    {
+      source.ignore();
+      m_currentColumn += 1;
+      return L"l";
+    }
+    else if (towlower(source.peek()) == 'f')
+    {
+      source.ignore();
+      m_currentColumn += 1;
+      return L"f";
+    }
+    else if (iswalpha(source.peek()))
+    {
+      throw ParsingException(
+        std::format(L"Invalid suffix for floating point constant {}",
+          source.get()), m_currentColumn, m_currentLine);
+    }
+
+    return {};
   }
 }
