@@ -129,12 +129,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\CLI\Main.cpp" />
+    <ClCompile Include="Source\Lexer\CLangKeywords.cpp" />
     <ClCompile Include="Source\Lexer\CLangLexer.cpp" />
-    <ClCompile Include="Source\Lexer\CLangToken.cpp" />
+    <ClCompile Include="Source\Lexer\CLangPunctuators.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Lexer\CLangLexer.hpp" />
     <ClInclude Include="Source\Lexer\CLangToken.hpp" />
+    <ClInclude Include="Source\Lexer\CLangTokenMap.hpp" />
+    <ClInclude Include="Source\Lexer\CLangTokenType.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

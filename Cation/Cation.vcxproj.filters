@@ -13,24 +13,39 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Lexer">
+      <UniqueIdentifier>{b319b8c5-c57d-4326-8d01-d12eea0a8c17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Lexer">
+      <UniqueIdentifier>{6a1037b4-0788-44e5-8b5a-d50f975e46dc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\CLI\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Lexer\CLangLexer.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Source\Lexer\CLangPunctuators.cpp">
+      <Filter>Source Files\Lexer</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Lexer\CLangToken.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="Source\Lexer\CLangLexer.cpp">
+      <Filter>Source Files\Lexer</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Lexer\CLangKeywords.cpp">
+      <Filter>Source Files\Lexer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Lexer\CLangTokenType.hpp">
+      <Filter>Header Files\Lexer</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Lexer\CLangLexer.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Lexer</Filter>
     </ClInclude>
     <ClInclude Include="Source\Lexer\CLangToken.hpp">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Lexer</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Lexer\CLangTokenMap.hpp">
+      <Filter>Header Files\Lexer</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

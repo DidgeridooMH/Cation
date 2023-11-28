@@ -1,65 +1,12 @@
+#include <format>
 #include <istream>
 #include <string>
-#include <unordered_map>
 #include "CLangLexer.hpp"
-#include "CLangToken.hpp"
+#include "CLangTokenMap.hpp"
+#include "CLangTokenType.hpp"
 
 namespace Cation
 {
-  using KeyToTokenMap =
-    std::unordered_map<std::wstring, CLangToken::TokenType>;
-
-  static const KeyToTokenMap PunctuatorSet = {
-    {L"[", CLangToken::LeftBracket},
-    {L"]", CLangToken::RightBracket},
-    {L"(", CLangToken::LeftParenthesis},
-    {L")", CLangToken::RightParenthesis},
-    {L"{", CLangToken::LeftDragon},
-    {L"}", CLangToken::RightDragon},
-    {L".", CLangToken::Period},
-    {L"->", CLangToken::Arrow},
-    {L"++", CLangToken::Increment},
-    {L"--", CLangToken::Decrement},
-    {L"*", CLangToken::Star},
-    {L"+", CLangToken::Add},
-    {L"-", CLangToken::Subtract},
-    {L"~", CLangToken::Tilde},
-    {L"!", CLangToken::Exclamation},
-    {L"/", CLangToken::Divide},
-    {L"%", CLangToken::Modulo},
-    {L"<<", CLangToken::ShiftLeft},
-    {L">>", CLangToken::ShiftRight},
-    {L"<", CLangToken::LessThan},
-    {L">", CLangToken::GreaterThan},
-    {L"<=", CLangToken::LessEqual},
-    {L">=", CLangToken::GreaterEqual},
-    {L"==", CLangToken::Equal},
-    {L"!=", CLangToken::NotEqual},
-    {L"&", CLangToken::And},
-    {L"|", CLangToken::Or},
-    {L"^", CLangToken::Xor},
-    {L"&&", CLangToken::LogicalAnd},
-    {L"||", CLangToken::LogicalOr},
-    {L"?", CLangToken::TernaryProposition},
-    {L":", CLangToken::TernaryDecision},
-    {L";", CLangToken::StatementDelimiter},
-    {L"...", CLangToken::Variadic},
-    {L"=", CLangToken::Assign},
-    {L"*=", CLangToken::MultiplyAssign},
-    {L"/=", CLangToken::DivideAssign},
-    {L"%=", CLangToken::ModuloAssign},
-    {L"+=", CLangToken::AddAssign},
-    {L"-=", CLangToken::SubtractAssign},
-    {L"<<=", CLangToken::LeftShiftAssign},
-    {L">>=", CLangToken::RightShiftAssign},
-    {L"&=", CLangToken::AndAssign},
-    {L"^=", CLangToken::XorAssign},
-    {L"|=", CLangToken::OrAssign},
-    {L",", CLangToken::Comma},
-    {L"#", CLangToken::Preprocessor},
-    {L"##", CLangToken::PreprocessorConcat}
-  };
-
   CLangLexer::CLangLexer() : m_currentLine(1), m_currentColumn(1)
   {
   }
@@ -68,38 +15,39 @@ namespace Cation
   {
     SkipWhitespace(source);
 
-    if (!source.good())
+    if (!source.good() ||
+      source.peek() == std::char_traits<wchar_t>::eof())
     {
-      return CLangToken(CLangToken::NoToken);
+      return {};
     }
 
-    size_t currentColumn = m_currentColumn;
-    std::wstring tokenBuffer{ source.get() };
-    m_currentColumn += 1;
-
-    CLangToken::TokenType tokenType = CLangToken::NoToken;
-    if (PunctuatorSet.contains(tokenBuffer))
+    if (PunctuatorMap.contains(std::wstring{ source.peek() }))
     {
-      tokenType = ParsePunctuator(source, tokenBuffer);
+      return ParsePunctuator(source);
     }
-    else if (tokenBuffer[0] == '\'')
+    else if (source.peek() == '\'')
     {
 
     }
-    else if (tokenBuffer[0] == '"')
+    else if (source.peek() == '"')
     {
 
     }
-    else if (iswdigit(tokenBuffer[0]))
+    else if (iswdigit(source.peek()))
     {
 
     }
     else
     {
-      tokenType = ParseIdentifier(source, tokenBuffer);
+      return ParseIdentifier(source);
     }
 
-    return CLangToken(tokenType, tokenBuffer, m_currentLine, currentColumn);
+    return CLangToken{
+      .type = CLangTokenType::BadToken,
+      .content = std::format(L"Unknown token: {}", source.peek()),
+      .line = m_currentLine,
+      .column = m_currentColumn
+    };
   }
 
   void CLangLexer::SkipWhitespace(std::wistream& source)
@@ -118,70 +66,82 @@ namespace Cation
     }
   }
 
-  CLangToken::TokenType CLangLexer::ParsePunctuator(std::wistream& source,
-    std::wstring& buffer)
+  CLangToken CLangLexer::ParsePunctuator(std::wistream& source)
   {
-    while (source.good())
+    CLangToken token = {
+      .line = m_currentLine,
+      .column = m_currentColumn
+    };
+    while (source.good() &&
+      source.peek() != std::char_traits<wchar_t>::eof())
     {
-      buffer += source.get();
+      token.content += source.get();
       m_currentColumn += 1;
 
-      if (!PunctuatorSet.contains(buffer) &&
-        !(buffer == L".." && source.peek() == '.'))
+      if (!PunctuatorMap.contains(token.content) &&
+        !(token.content == L".." && source.peek() == '.'))
       {
-        buffer.pop_back();
+        token.content.pop_back();
         source.unget();
         m_currentColumn -= 1;
         break;
       }
     }
-    return PunctuatorSet.at(buffer);
+    token.type = PunctuatorMap.at(token.content);
+    return token;
   }
 
-  CLangToken::TokenType CLangLexer::ParseIdentifier(std::wistream& source,
-    std::wstring& buffer)
+  CLangToken CLangLexer::ParseIdentifier(std::wistream& source)
   {
-    // If we need to parse a carriage, we want to do a look ahead for the
-    // carriage code.
-    if (buffer.back() == '\\')
-    {
-      buffer.pop_back();
-      source.unget();
-      m_currentColumn -= 1;
-    }
-
+    CLangToken token = {
+      .type = CLangTokenType::Identifier,
+      .line = m_currentLine,
+      .column = m_currentColumn
+    };
     while (source.good() &&
       source.peek() != std::char_traits<wchar_t>::eof() &&
-      !PunctuatorSet.contains(std::wstring{ source.peek() }) &&
-      source.peek() != '"' && source.peek() != '\'')
+      !PunctuatorMap.contains(std::wstring{ source.peek() }) &&
+      source.peek() != '"' && source.peek() != '\'' &&
+      !iswspace(source.peek()))
     {
-      buffer += source.get();
+      token.content += source.get();
       m_currentColumn += 1;
-      if (buffer.back() == '\\')
+      if (token.content.back() == '\\')
       {
-        buffer.pop_back();
-
-        if (!ParseUniversalCharacter(source, buffer))
+        token.content.pop_back();
+        std::wstring uChar = ParseUniversalCharacter(source);
+        if (uChar.empty())
         {
-          return CLangToken::BadToken;
+          return CLangToken{
+            .type = CLangTokenType::BadToken,
+            .content = L"Malformatted universal character"
+          };
         }
+        token.content += uChar;
       }
     }
-    return CLangToken::Identifier;
+
+    if (KeywordMap.contains(token.content))
+    {
+      token.type = KeywordMap.at(token.content);
+    }
+
+    return token;
   }
 
-  bool CLangLexer::ParseUniversalCharacter(std::wistream& source,
-    std::wstring& buffer)
+  std::wstring CLangLexer::ParseUniversalCharacter(std::wistream& source)
   {
     constexpr size_t Utf16CodeSize = 4;
     constexpr size_t Utf32CodeSize = 8;
 
     if (!source.good() || (source.peek() != 'U' && source.peek() != 'u'))
     {
-      return false;
+      return L"";
     }
 
     size_t codeSize = source.get() == 'u' ? Utf16CodeSize : Utf32CodeSize;
+    m_currentColumn += 1;
+
     std::wstring unicodeCharacter(codeSize, '0');
     source.read(unicodeCharacter.data(), codeSize);
     m_currentColumn += codeSize;
@@ -193,9 +153,10 @@ namespace Cation
           return !iswdigit(c) && towlower(c) < 'a' && towlower(c) > 'f';
         }) != unicodeCharacter.end())
     {
-      return false;
+      return L"";
     }
 
+    std::wstring buffer;
     uint32_t codepoint = std::stoi(unicodeCharacter, nullptr, 16);
     if (codeSize == Utf16CodeSize || codepoint < 0x10000)
     {
@@ -208,6 +169,6 @@ namespace Cation
       buffer += static_cast<wchar_t>((codepoint & 0x3FF) | 0xDC00);
     }
 
-    return true;
+    return buffer;
   }
 }

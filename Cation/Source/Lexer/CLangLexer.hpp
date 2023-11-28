@@ -33,11 +33,9 @@ namespace Cation
     CLangToken GetToken(std::wistream& source);
 
   private:
-    CLangToken::TokenType ParsePunctuator(std::wistream& source,
-      std::wstring& buffer);
-    CLangToken::TokenType ParseIdentifier(std::wistream& source,
-      std::wstring& buffer);
-    bool ParseUniversalCharacter(std::wistream& source, std::wstring& buffer);
+    CLangToken ParsePunctuator(std::wistream& source);
+    CLangToken ParseIdentifier(std::wistream& source);
+    std::wstring ParseUniversalCharacter(std::wistream& source);
 
     void SkipWhitespace(std::wistream& source);
 
