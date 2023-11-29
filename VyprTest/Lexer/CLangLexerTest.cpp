@@ -1,19 +1,20 @@
 ﻿#include "Vypr/Lexer/CLangLexer.hpp"
 
 #include <gtest/gtest.h>
-#include <iosfwd>
 #include <string>
 
 #include "Vypr/Lexer/CLangToken.hpp"
+#include "Vypr/Scanner/StringScanner.hpp"
 
 namespace CLangLexerTest
 {
   TEST(GetToken, Empty)
   {
     Vypr::CLangLexer lexer;
-    std::wstringstream testStream(L"");
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"");
 
-    Vypr::CLangToken token = lexer.GetToken(testStream);
+    Vypr::CLangToken token = lexer.GetToken(*testStream);
 
     EXPECT_EQ(token.type, Vypr::CLangTokenType::NoToken);
   }
@@ -21,11 +22,11 @@ namespace CLangLexerTest
   TEST(GetToken, LeadingWS)
   {
     Vypr::CLangLexer lexer;
-    std::wstringstream testStream(L"   (");
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"   (");
 
-    Vypr::CLangToken token = lexer.GetToken(testStream);
-    std::wstring remaining;
-    testStream >> remaining;
+    Vypr::CLangToken token = lexer.GetToken(*testStream);
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; });
 
     EXPECT_EQ(token.type, Vypr::CLangTokenType::LeftParenthesis);
     EXPECT_EQ(token.line, 1ULL);
@@ -38,15 +39,15 @@ namespace CLangLexerTest
   TEST(GetToken, testName##name)                                               \
   {                                                                            \
     Vypr::CLangLexer lexer;                                                    \
-    std::wstringstream testStream(testStr L" aaa");                            \
-    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
-    std::wstring remaining;                                                    \
-    testStream >> remaining;                                                   \
+    std::unique_ptr<Vypr::Scanner> testStream =                                \
+        std::make_unique<Vypr::StringScanner>(testStr L" aaa");                \
+    Vypr::CLangToken token = lexer.GetToken(*testStream);                      \
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; }); \
     EXPECT_EQ(token.type, Vypr::CLangTokenType::name);                         \
     EXPECT_EQ(token.line, 1ULL);                                               \
     EXPECT_EQ(token.column, 1ULL);                                             \
     EXPECT_EQ(token.content, std::wstring(testStr));                           \
-    EXPECT_EQ(remaining, L"aaa");                                              \
+    EXPECT_EQ(remaining, L" aaa");                                             \
   }
 
   TEST_GET_TOKEN(Operator, LeftBracket, L"[");
@@ -100,12 +101,12 @@ namespace CLangLexerTest
   TEST(GetToken, PartialVariadic)
   {
     Vypr::CLangLexer lexer;
-    std::wstringstream testStream(L"..");
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"..");
 
-    Vypr::CLangToken firstToken = lexer.GetToken(testStream);
-    Vypr::CLangToken secondToken = lexer.GetToken(testStream);
-    std::wstring remaining;
-    testStream >> remaining;
+    Vypr::CLangToken firstToken = lexer.GetToken(*testStream);
+    Vypr::CLangToken secondToken = lexer.GetToken(*testStream);
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; });
 
     EXPECT_EQ(firstToken.type, Vypr::CLangTokenType::Period);
     EXPECT_EQ(firstToken.line, 1ULL);
@@ -123,12 +124,12 @@ namespace CLangLexerTest
   TEST(GetToken, TwoToken)
   {
     Vypr::CLangLexer lexer;
-    std::wstringstream testStream(L"   (}");
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"   (}");
 
-    Vypr::CLangToken firstToken = lexer.GetToken(testStream);
-    Vypr::CLangToken secondToken = lexer.GetToken(testStream);
-    std::wstring remaining;
-    testStream >> remaining;
+    Vypr::CLangToken firstToken = lexer.GetToken(*testStream);
+    Vypr::CLangToken secondToken = lexer.GetToken(*testStream);
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; });
 
     EXPECT_EQ(firstToken.type, Vypr::CLangTokenType::LeftParenthesis);
     EXPECT_EQ(firstToken.line, 1ULL);
@@ -146,12 +147,12 @@ namespace CLangLexerTest
   TEST(GetToken, TwoTokenNoSecond)
   {
     Vypr::CLangLexer lexer;
-    std::wstringstream testStream(L"   (");
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"   (");
 
-    Vypr::CLangToken firstToken = lexer.GetToken(testStream);
-    Vypr::CLangToken secondToken = lexer.GetToken(testStream);
-    std::wstring remaining;
-    testStream >> remaining;
+    Vypr::CLangToken firstToken = lexer.GetToken(*testStream);
+    Vypr::CLangToken secondToken = lexer.GetToken(*testStream);
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; });
 
     EXPECT_EQ(firstToken.type, Vypr::CLangTokenType::LeftParenthesis);
     EXPECT_EQ(firstToken.line, 1ULL);
@@ -170,10 +171,10 @@ namespace CLangLexerTest
   TEST(GetToken, Identifier##name)                                             \
   {                                                                            \
     Vypr::CLangLexer lexer;                                                    \
-    std::wstringstream testStream(testStr);                                    \
-    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
-    std::wstring remaining;                                                    \
-    testStream >> remaining;                                                   \
+    std::unique_ptr<Vypr::Scanner> testStream =                                \
+        std::make_unique<Vypr::StringScanner>(testStr);                        \
+    Vypr::CLangToken token = lexer.GetToken(*testStream);                      \
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; }); \
     EXPECT_EQ(token.type, Vypr::CLangTokenType::Identifier);                   \
     EXPECT_EQ(token.line, 1ULL);                                               \
     EXPECT_EQ(token.column, 1ULL);                                             \
@@ -195,10 +196,10 @@ namespace CLangLexerTest
   TEST(GetToken, Identifier##name)                                             \
   {                                                                            \
     Vypr::CLangLexer lexer;                                                    \
-    std::wstringstream testStream(testStr);                                    \
-    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
-    std::wstring remaining;                                                    \
-    testStream >> remaining;                                                   \
+    std::unique_ptr<Vypr::Scanner> testStream =                                \
+        std::make_unique<Vypr::StringScanner>(testStr);                        \
+    Vypr::CLangToken token = lexer.GetToken(*testStream);                      \
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; }); \
     EXPECT_EQ(token.type, Vypr::CLangTokenType::Identifier);                   \
     EXPECT_EQ(token.line, 1ULL);                                               \
     EXPECT_EQ(token.column, 1ULL);                                             \
@@ -265,11 +266,11 @@ namespace CLangLexerTest
   TEST(GetToken, NumericConstant##name)                                        \
   {                                                                            \
     Vypr::CLangLexer lexer;                                                    \
-    std::wstringstream testStream(testStr);                                    \
+    std::unique_ptr<Vypr::Scanner> testStream =                                \
+        std::make_unique<Vypr::StringScanner>(testStr);                        \
                                                                                \
-    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
-    std::wstring remaining;                                                    \
-    testStream >> remaining;                                                   \
+    Vypr::CLangToken token = lexer.GetToken(*testStream);                      \
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; }); \
                                                                                \
     EXPECT_EQ(token.type, Vypr::CLangTokenType::tokenType);                    \
     EXPECT_EQ(token.content, resultStr);                                       \
@@ -288,9 +289,10 @@ namespace CLangLexerTest
   TEST(GetToken, NumericConstant##name)                                        \
   {                                                                            \
     Vypr::CLangLexer lexer;                                                    \
-    std::wstringstream testStream(testStr);                                    \
+    std::unique_ptr<Vypr::Scanner> testStream =                                \
+        std::make_unique<Vypr::StringScanner>(testStr);                        \
                                                                                \
-    EXPECT_THROW((void)lexer.GetToken(testStream), Vypr::ParsingException);    \
+    EXPECT_THROW((void)lexer.GetToken(*testStream), Vypr::ParsingException);   \
   }
 
   TEST_GET_TOKEN_CONSTANT_INTEGER(BinaryZero, L"0b0", L"0b0");

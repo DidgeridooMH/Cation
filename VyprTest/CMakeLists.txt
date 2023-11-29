@@ -8,8 +8,8 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 set(VYPR_TEST_SOURCE
-  Lexer/CLangLexerTest.cpp
-)
+  "Lexer/CLangLexerTest.cpp"
+  "Scanner/StringScannerTest.cpp")
 
 add_executable(vyprtest ${VYPR_TEST_SOURCE})
 target_link_libraries(vyprtest libvypr GTest::gtest_main)

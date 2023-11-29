@@ -1,24 +1,37 @@
 #pragma once
 
 #include <exception>
-#include <iosfwd>
 #include <string>
 
 #include "Vypr/Lexer/CLangToken.hpp"
+#include "Vypr/Scanner/Scanner.hpp"
 
-// TODO: Replace istream with a variant that counts col,line for you.
 namespace Vypr
 {
-  // TODO: Document
+  /// <summary>
+  /// Exception that can happen while trying to parse an input.
+  /// </summary>
   struct ParsingException : std::exception
   {
     ParsingException(std::wstring message, size_t column, size_t line);
 
+    /// <summary>
+    /// Brief explanation of the exception that was encountered.
+    /// </summary>
     std::wstring message;
+
+    /// <summary>
+    /// 1-indexed column that the exception was encountered at.
+    /// </summary>
     size_t column;
+
+    /// <summary>
+    /// 1-indexed line that the exception was encountered at.
+    /// </summary>
     size_t line;
   };
 
+  // TODO: This holds no state and might be better off being a namespace.
   /// <summary>
   /// C language lexer. Parses a raw file or string stream into tokens dfiend
   /// in the C language grammar. Only metadata about a stream is held by the
@@ -27,11 +40,6 @@ namespace Vypr
   class CLangLexer
   {
   public:
-    /// <summary>
-    /// Constructs a new lexer.
-    /// </summary>
-    CLangLexer();
-
     /// <summary>
     /// Fetch a token from the front of the stream. Whitespace is ignored and
     /// tokens are not parsed across vertical whitespace.
@@ -43,14 +51,41 @@ namespace Vypr
     /// couldn't be parsed.
     /// </returns>
     [[nodiscard]]
-    CLangToken GetToken(std::wistream &source);
+    CLangToken GetToken(Scanner &source);
 
   private:
-    // TODO: Document
-    CLangToken ParsePunctuator(std::wistream &source);
-    CLangToken ParseIdentifier(std::wistream &source);
-    std::wstring ParseUniversalCharacter(std::wistream &source);
-    CLangToken ParseNumericalConstant(std::wistream &source);
+    /// <summary>
+    /// Parses a punctuator from the source.
+    /// </summary>
+    /// <param name="source">Stream of wchar_t.</param>
+    /// <returns>Token of the punctuator.</returns>
+    CLangToken ParsePunctuator(Scanner &source);
+
+    /// <summary>
+    /// Parses an identifier or keyword from source.
+    /// </summary>
+    /// <param name="source">Stream of wchar_t.</param>
+    /// <returns>Token of the keyword or identifier.</returns>
+    CLangToken ParseIdentifier(Scanner &source);
+
+    /// <summary>
+    /// Parses a unicode character from source. Front of source should be either
+    /// <c>'u'</c> for UTF-16 or <c>'U'</c> for UTF-32.
+    /// </summary>
+    /// <param name="source">Stream of wchar_t.</param>
+    /// <returns>
+    /// String containing the unicode character.
+    /// </returns>
+    std::wstring ParseUniversalCharacter(Scanner &source);
+
+    /// <summary>
+    /// Parses a numerical constant from source.
+    /// </summary>
+    /// <param name="source">Stream of wchar_t.</param>
+    /// <returns>
+    /// Token containing either a float constant or integer constant.
+    /// </returns>
+    CLangToken ParseNumericalConstant(Scanner &source);
 
     /// <summary>
     /// Parses and convert a binary number from source.
@@ -63,7 +98,7 @@ namespace Vypr
     /// Thrown when a binary number contains values other than 0 and 1.
     /// </exception>
     [[nodiscard]]
-    std::wstring ParseBinaryConstant(std::wistream &source);
+    std::wstring ParseBinaryConstant(Scanner &source);
 
     /// <summary>
     /// Parses a number with a integral part, an optional fraction part, and
@@ -77,8 +112,7 @@ namespace Vypr
     /// floating point string.</returns>
     [[nodiscard]]
     std::tuple<bool, std::wstring> ParseFloatableConstant(
-        std::wistream &source,
-        std::wstring (CLangLexer::*parser)(std::wistream &),
+        Scanner &source, std::wstring (CLangLexer::*parser)(Scanner &),
         char exponentDelimiter, bool requireExponent);
 
     /// <summary>
@@ -92,7 +126,7 @@ namespace Vypr
     /// Thrown when a hexadecimal number contains values other [0-9a-zA-Z].
     /// </exception>
     [[nodiscard]]
-    std::wstring ParseHexadecimalSequence(std::wistream &source);
+    std::wstring ParseHexadecimalSequence(Scanner &source);
 
     /// <summary>
     /// Parses integer from source.
@@ -105,7 +139,7 @@ namespace Vypr
     /// Thrown if sequence not found.
     /// </exception>
     [[nodiscard]]
-    std::wstring ParseIntegerSequence(std::wistream &source);
+    std::wstring ParseIntegerSequence(Scanner &source);
 
     /// <summary>
     /// Parses an integer suffix of u, U, l, L, ll, LL.
@@ -115,7 +149,7 @@ namespace Vypr
     /// Integer suffix or empty string if one is not available.
     /// </returns>
     [[nodiscard]]
-    std::wstring ParseIntegerSuffix(std::wistream &source);
+    std::wstring ParseIntegerSuffix(Scanner &source);
 
     /// <summary>
     /// Parses an float suffix of f, F, l, L.
@@ -125,14 +159,6 @@ namespace Vypr
     /// Float suffix or empty string if one is not available.
     /// </returns>
     [[nodiscard]]
-    std::wstring ParseFloatSuffix(std::wistream &source);
-
-    /// <summary>
-    /// Skips the stream past any whitespace.
-    /// </summary>
-    void SkipWhitespace(std::wistream &source);
-
-    size_t m_currentLine;
-    size_t m_currentColumn;
+    std::wstring ParseFloatSuffix(Scanner &source);
   };
 } // namespace Vypr

@@ -14,40 +14,30 @@ namespace Vypr
   {
   }
 
-  CLangLexer::CLangLexer() : m_currentLine(1), m_currentColumn(1)
+  CLangToken CLangLexer::GetToken(Scanner &source)
   {
-  }
+    source.NextWhile(reinterpret_cast<bool (*)(wchar_t)>(iswspace));
 
-  CLangToken CLangLexer::GetToken(std::wistream &source)
-  {
-    SkipWhitespace(source);
-
-    if (!source.good() || source.peek() == std::char_traits<wchar_t>::eof())
+    if (source.Finished())
     {
       return {};
     }
 
-    // Corner case for floating point that can be either a period or start of a
-    // number.
-    source.ignore();
-    wchar_t lookAhead = source.peek();
-    source.unget();
-
-    if (iswdigit(source.peek()) ||
-        (source.peek() == '.' && iswdigit(lookAhead)))
+    if (iswdigit(source.LookAhead(0)) ||
+        (source.LookAhead(0) == '.' && iswdigit(source.LookAhead(1))))
     {
       return ParseNumericalConstant(source);
     }
     else if (PunctuatorMap.contains(
-                 std::wstring{static_cast<wchar_t>(source.peek())}))
+                 std::wstring{static_cast<wchar_t>(source.LookAhead(0))}))
     {
       return ParsePunctuator(source);
     }
-    else if (source.peek() == '\'')
+    else if (source.LookAhead(0) == '\'')
     {
       // TODO
     }
-    else if (source.peek() == '"')
+    else if (source.LookAhead(0) == '"')
     {
       // TODO
     }
@@ -56,60 +46,35 @@ namespace Vypr
       return ParseIdentifier(source);
     }
 
-    throw ParsingException(L"Unknown token " + source.peek() +
+    throw ParsingException(L"Unknown token " + source.LookAhead(0) +
                                std::wstring(L" found."),
-                           m_currentColumn, m_currentLine);
+                           source.GetColumn(), source.GetLine());
   }
 
-  void CLangLexer::SkipWhitespace(std::wistream &source)
+  CLangToken CLangLexer::ParsePunctuator(Scanner &source)
   {
-    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
-           iswspace(source.peek()))
+    CLangToken token = {.line = source.GetLine(), .column = source.GetColumn()};
+    do
     {
-      m_currentColumn += 1;
-      if (source.peek() == '\n')
-      {
-        m_currentLine += 1;
-        m_currentColumn = 1;
-      }
-      source.ignore();
-    }
-  }
-
-  CLangToken CLangLexer::ParsePunctuator(std::wistream &source)
-  {
-    CLangToken token = {.line = m_currentLine, .column = m_currentColumn};
-    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof())
-    {
-      token.content += source.get();
-      m_currentColumn += 1;
-
-      if (!PunctuatorMap.contains(token.content) &&
-          !(token.content == L".." && source.peek() == '.'))
-      {
-        token.content.pop_back();
-        source.unget();
-        m_currentColumn -= 1;
-        break;
-      }
-    }
+      token.content += source.Next();
+    } while (!source.Finished() &&
+                 PunctuatorMap.contains(token.content + source.LookAhead(0)) ||
+             PunctuatorMap.contains(token.content + source.LookAhead(0, 2)));
     token.type = PunctuatorMap.at(token.content);
     return token;
   }
 
-  CLangToken CLangLexer::ParseIdentifier(std::wistream &source)
+  CLangToken CLangLexer::ParseIdentifier(Scanner &source)
   {
     CLangToken token = {.type = CLangTokenType::Identifier,
-                        .line = m_currentLine,
-                        .column = m_currentColumn};
-    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
-           !PunctuatorMap.contains(
-               std::wstring{static_cast<wchar_t>(source.peek())}) &&
-           source.peek() != '"' && source.peek() != '\'' &&
-           !iswspace(source.peek()))
+                        .line = source.GetLine(),
+                        .column = source.GetColumn()};
+    while (!source.Finished() &&
+           !PunctuatorMap.contains(source.LookAhead(0, 1)) &&
+           source.LookAhead(0) != '"' && source.LookAhead(0) != '\'' &&
+           !iswspace(source.LookAhead(0)))
     {
-      token.content += source.get();
-      m_currentColumn += 1;
+      token.content += source.Next();
       if (token.content.back() == '\\')
       {
         token.content.pop_back();
@@ -131,29 +96,29 @@ namespace Vypr
     return token;
   }
 
-  std::wstring CLangLexer::ParseUniversalCharacter(std::wistream &source)
+  std::wstring CLangLexer::ParseUniversalCharacter(Scanner &source)
   {
     constexpr size_t Utf16CodeSize = 4;
     constexpr size_t Utf32CodeSize = 8;
 
-    if (!source.good() || (source.peek() != 'U' && source.peek() != 'u'))
+    if (source.Finished() ||
+        (source.LookAhead(0) != 'U' && source.LookAhead(0) != 'u'))
     {
       return L"";
     }
 
-    size_t codeSize = source.get() == 'u' ? Utf16CodeSize : Utf32CodeSize;
-    m_currentColumn += 1;
+    size_t codeSize = source.Next() == 'u' ? Utf16CodeSize : Utf32CodeSize;
 
-    std::wstring unicodeCharacter(codeSize, '0');
-    source.read(unicodeCharacter.data(), codeSize);
-    m_currentColumn += codeSize;
+    std::wstring unicodeCharacter = source.Next(codeSize);
+    if (unicodeCharacter.length() != codeSize)
+    {
+      return L"";
+    }
 
-    if (source.fail() || std::find_if(unicodeCharacter.begin(),
-                                      unicodeCharacter.end(), [](wchar_t c) {
-                                        return !iswdigit(c) &&
-                                               towlower(c) < 'a' &&
-                                               towlower(c) > 'f';
-                                      }) != unicodeCharacter.end())
+    if (std::find_if(
+            unicodeCharacter.begin(), unicodeCharacter.end(), [](wchar_t c) {
+              return !iswdigit(c) && towlower(c) < 'a' && towlower(c) > 'f';
+            }) != unicodeCharacter.end())
     {
       return L"";
     }
@@ -178,29 +143,22 @@ namespace Vypr
     return buffer;
   }
 
-  CLangToken CLangLexer::ParseNumericalConstant(std::wistream &source)
+  CLangToken CLangLexer::ParseNumericalConstant(Scanner &source)
   {
     CLangToken token = {.type = CLangTokenType::IntegerConstant,
-                        .line = m_currentLine,
-                        .column = m_currentColumn};
+                        .line = source.GetLine(),
+                        .column = source.GetColumn()};
 
-    // TODO: A better stream needs to be made.
-    source.ignore();
-    wchar_t lookAhead = towlower(source.peek());
-    source.unget();
-
-    if (source.peek() == '0' && lookAhead == 'b')
+    if (source.LookAhead(0, 2) == L"0b" || source.LookAhead(0, 2) == L"0B")
     {
-      token.content += source.get();
-      token.content += towlower(source.get());
-      m_currentColumn += 2;
+      token.content += source.Next();
+      token.content += towlower(source.Next());
       token.content += ParseBinaryConstant(source);
     }
-    else if (source.peek() == '0' && lookAhead == 'x')
+    else if (source.LookAhead(0, 2) == L"0x" || source.LookAhead(0, 2) == L"0X")
     {
-      token.content += source.get();
-      token.content += towlower(source.get());
-      m_currentColumn += 2;
+      token.content += source.Next();
+      token.content += towlower(source.Next());
 
       const auto &[isFloatingPoint, content] = ParseFloatableConstant(
           source, &CLangLexer::ParseHexadecimalSequence, 'p', true);
@@ -233,49 +191,45 @@ namespace Vypr
     return token;
   }
 
-  std::wstring CLangLexer::ParseBinaryConstant(std::wistream &source)
+  std::wstring CLangLexer::ParseBinaryConstant(Scanner &source)
   {
     std::wstring buffer;
-    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
-           iswdigit(source.peek()))
+    while (iswdigit(source.LookAhead(0)))
     {
-      buffer += source.get();
-      m_currentColumn += 1;
+      buffer += source.Next();
       if (buffer.back() != '0' && buffer.back() != '1')
       {
         throw ParsingException(buffer + L" is not a valid binary number.",
-                               m_currentColumn, m_currentLine);
+                               source.GetColumn(), source.GetLine());
       }
     }
 
     if (buffer.empty())
     {
-      throw ParsingException(L"Expected binary number.", m_currentColumn,
-                             m_currentLine);
+      throw ParsingException(L"Expected binary number.", source.GetColumn(),
+                             source.GetLine());
     }
 
     return buffer;
   }
 
   std::tuple<bool, std::wstring> CLangLexer::ParseFloatableConstant(
-      std::wistream &source,
-      std::wstring (CLangLexer::*parser)(std::wistream &),
+      Scanner &source, std::wstring (CLangLexer::*parser)(Scanner &),
       char exponentDelimiter, bool requireExponent)
   {
     std::wstring buffer;
     bool isFloatingPoint = false;
 
-    if (source.peek() != '.')
+    if (source.LookAhead(0) != '.')
     {
       buffer += (this->*parser)(source);
     }
 
-    if (source.peek() == '.')
+    if (source.LookAhead(0) == '.')
     {
       isFloatingPoint = true;
 
-      buffer += source.get();
-      m_currentColumn += 1;
+      buffer += source.Next();
 
       try
       {
@@ -290,84 +244,76 @@ namespace Vypr
       }
     }
 
-    if (towlower(source.peek()) == exponentDelimiter)
+    if (towlower(source.LookAhead(0)) == exponentDelimiter)
     {
-      buffer += towlower(source.get());
-      m_currentColumn += 1;
+      buffer += towlower(source.Next());
 
-      if (source.peek() == '-' || source.peek() == '+')
+      if (source.LookAhead(0) == '-' || source.LookAhead(0) == '+')
       {
-        buffer += source.get();
-        m_currentColumn += 1;
+        buffer += source.Next();
       }
 
       buffer += ParseIntegerSequence(source);
     }
     else if (isFloatingPoint && requireExponent)
     {
-      throw ParsingException(L"Invalid numerical constant.", m_currentColumn,
-                             m_currentLine);
+      throw ParsingException(L"Invalid numerical constant.", source.GetColumn(),
+                             source.GetLine());
     }
 
     return {isFloatingPoint, buffer};
   }
 
-  std::wstring CLangLexer::ParseHexadecimalSequence(std::wistream &source)
+  std::wstring CLangLexer::ParseHexadecimalSequence(Scanner &source)
   {
     std::wstring buffer;
-    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
-           iswxdigit(source.peek()))
+    while (iswxdigit(source.LookAhead(0)))
     {
-      buffer += towlower(source.get());
-      m_currentColumn += 1;
+      buffer += towlower(source.Next());
     }
 
     if (buffer.empty())
     {
-      throw ParsingException(L"Expected hexadecimal number.", m_currentColumn,
-                             m_currentLine);
+      throw ParsingException(L"Expected hexadecimal number.",
+                             source.GetColumn(), source.GetLine());
     }
 
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseIntegerSequence(std::wistream &source)
+  std::wstring CLangLexer::ParseIntegerSequence(Scanner &source)
   {
     std::wstring buffer;
-    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
-           iswdigit(source.peek()))
+    while (iswdigit(source.LookAhead(0)))
     {
-      buffer += source.get();
-      m_currentColumn += 1;
+      buffer += source.Next();
     }
 
     if (buffer.empty())
     {
-      throw ParsingException(L"Expected decimal number.", m_currentColumn,
-                             m_currentLine);
+      throw ParsingException(L"Expected decimal number.", source.GetColumn(),
+                             source.GetLine());
     }
 
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseIntegerSuffix(std::wistream &source)
+  std::wstring CLangLexer::ParseIntegerSuffix(Scanner &source)
   {
     std::wstring buffer;
     bool signUsed = false;
     bool sizeUsed = false;
-    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
-           iswalpha(source.peek()))
+    while (iswalpha(source.LookAhead(0)))
     {
-      buffer += towlower(source.get());
-      m_currentColumn += 1;
+      buffer += towlower(source.Next());
 
       if (buffer.back() == 'u')
       {
         if (signUsed)
         {
           throw ParsingException(L"Invalid suffix for integer constant " +
-                                     source.get(),
-                                 m_currentColumn, m_currentLine);
+                                     source.LookAhead(0),
+                                 source.GetColumn(), source.GetLine());
         }
         signUsed = true;
       }
@@ -376,40 +322,33 @@ namespace Vypr
         if (sizeUsed && buffer[buffer.size() - 2] != 'l')
         {
           throw ParsingException(L"Invalid suffix for integer constant " +
-                                     source.get(),
-                                 m_currentColumn, m_currentLine);
+                                     source.LookAhead(0),
+                                 source.GetColumn(), source.GetLine());
         }
         sizeUsed = true;
       }
       else
       {
         throw ParsingException(L"Invalid suffix for integer constant " +
-                                   source.get(),
-                               m_currentColumn, m_currentLine);
+                                   source.LookAhead(0),
+                               source.GetColumn(), source.GetLine());
       }
     }
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseFloatSuffix(std::wistream &source)
+  std::wstring CLangLexer::ParseFloatSuffix(Scanner &source)
   {
-    if (towlower(source.peek()) == 'l')
+    if (towlower(source.LookAhead(0)) == 'l' ||
+        towlower(source.LookAhead(0)) == 'f')
     {
-      source.ignore();
-      m_currentColumn += 1;
-      return L"l";
+      return std::wstring{towlower(source.Next())};
     }
-    else if (towlower(source.peek()) == 'f')
-    {
-      source.ignore();
-      m_currentColumn += 1;
-      return L"f";
-    }
-    else if (iswalpha(source.peek()))
+    else if (iswalpha(source.LookAhead(0)))
     {
       throw ParsingException(L"Invalid suffix for floating point constant " +
-                                 source.get(),
-                             m_currentColumn, m_currentLine);
+                                 source.LookAhead(0),
+                             source.GetColumn(), source.GetLine());
     }
 
     return {};
