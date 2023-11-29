@@ -46,8 +46,8 @@ namespace Vypr
       return ParseIdentifier(source);
     }
 
-    throw ParsingException(L"Unknown token " + source.LookAhead(0) +
-                               std::wstring(L" found."),
+    throw ParsingException(L"Unknown token " + source.LookAhead(0, 1) +
+                               L" found.",
                            source.GetColumn(), source.GetLine());
   }
 
@@ -312,7 +312,7 @@ namespace Vypr
         if (signUsed)
         {
           throw ParsingException(L"Invalid suffix for integer constant " +
-                                     source.LookAhead(0),
+                                     source.LookAhead(0, 1),
                                  source.GetColumn(), source.GetLine());
         }
         signUsed = true;
@@ -322,7 +322,7 @@ namespace Vypr
         if (sizeUsed && buffer[buffer.size() - 2] != 'l')
         {
           throw ParsingException(L"Invalid suffix for integer constant " +
-                                     source.LookAhead(0),
+                                     source.LookAhead(0, 1),
                                  source.GetColumn(), source.GetLine());
         }
         sizeUsed = true;
@@ -330,7 +330,7 @@ namespace Vypr
       else
       {
         throw ParsingException(L"Invalid suffix for integer constant " +
-                                   source.LookAhead(0),
+                                   source.LookAhead(0, 1),
                                source.GetColumn(), source.GetLine());
       }
     }
@@ -342,12 +342,12 @@ namespace Vypr
     if (towlower(source.LookAhead(0)) == 'l' ||
         towlower(source.LookAhead(0)) == 'f')
     {
-      return std::wstring{towlower(source.Next())};
+      return std::wstring{static_cast<wchar_t>(towlower(source.Next()))};
     }
     else if (iswalpha(source.LookAhead(0)))
     {
       throw ParsingException(L"Invalid suffix for floating point constant " +
-                                 source.LookAhead(0),
+                                 source.LookAhead(0, 1),
                              source.GetColumn(), source.GetLine());
     }
 
