@@ -1,4 +1,3 @@
-#include <format>
 #include <istream>
 #include <string>
 #include "Vypr/Lexer/CLangLexer.hpp"
@@ -54,9 +53,9 @@ namespace Vypr
       return ParseIdentifier(source);
     }
 
-    throw ParsingException(
-        std::format(L"Unknown token {} found.", source.peek()), m_currentColumn,
-        m_currentLine);
+    throw ParsingException(L"Unknown token " + source.peek() +
+                               std::wstring(L" found."),
+                           m_currentColumn, m_currentLine);
   }
 
   void CLangLexer::SkipWhitespace(std::wistream &source)
@@ -236,9 +235,8 @@ namespace Vypr
       m_currentColumn += 1;
       if (buffer.back() != '0' && buffer.back() != '1')
       {
-        throw ParsingException(
-            std::format(L"{} is not a valid binary number.", buffer),
-            m_currentColumn, m_currentLine);
+        throw ParsingException(buffer + L" is not a valid binary number.",
+                               m_currentColumn, m_currentLine);
       }
     }
 
@@ -359,10 +357,9 @@ namespace Vypr
       {
         if (signUsed)
         {
-          throw ParsingException(
-              std::format(L"Invalid suffix for integer constant {}",
-                          source.get()),
-              m_currentColumn, m_currentLine);
+          throw ParsingException(L"Invalid suffix for integer constant " +
+                                     source.get(),
+                                 m_currentColumn, m_currentLine);
         }
         signUsed = true;
       }
@@ -370,19 +367,17 @@ namespace Vypr
       {
         if (sizeUsed && buffer[buffer.size() - 2] != 'l')
         {
-          throw ParsingException(
-              std::format(L"Invalid suffix for integer constant {}",
-                          source.get()),
-              m_currentColumn, m_currentLine);
+          throw ParsingException(L"Invalid suffix for integer constant " +
+                                     source.get(),
+                                 m_currentColumn, m_currentLine);
         }
         sizeUsed = true;
       }
       else
       {
-        throw ParsingException(
-            std::format(L"Invalid suffix for integer constant {}",
-                        source.get()),
-            m_currentColumn, m_currentLine);
+        throw ParsingException(L"Invalid suffix for integer constant " +
+                                   source.get(),
+                               m_currentColumn, m_currentLine);
       }
     }
     return buffer;
@@ -404,10 +399,9 @@ namespace Vypr
     }
     else if (iswalpha(source.peek()))
     {
-      throw ParsingException(
-          std::format(L"Invalid suffix for floating point constant {}",
-                      source.get()),
-          m_currentColumn, m_currentLine);
+      throw ParsingException(L"Invalid suffix for floating point constant " +
+                                 source.get(),
+                             m_currentColumn, m_currentLine);
     }
 
     return {};
