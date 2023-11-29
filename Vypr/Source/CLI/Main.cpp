@@ -5,7 +5,7 @@
 #include "Vypr/Lexer/CLangLexer.hpp"
 #include "Vypr/Lexer/CLangToken.hpp"
 
-int main(int, char**)
+int main(int, char **)
 {
   std::wstringstream source(L"(}hi)");
   Vypr::CLangLexer lexer;
@@ -14,7 +14,7 @@ int main(int, char**)
   while (token.type != Vypr::CLangTokenType::NoToken)
   {
     std::wcout << "[" << token.line << "," << token.column << "] "
-      << (int)token.type << " - " << token.content << "\n";
+               << (int)token.type << " - " << token.content << "\n";
 
     token = lexer.GetToken(source);
   }

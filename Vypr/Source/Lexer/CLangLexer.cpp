@@ -7,9 +7,9 @@
 
 namespace Vypr
 {
-  ParsingException::ParsingException(std::wstring message,
-    size_t column, size_t line)
-    : message(message), column(column), line(line)
+  ParsingException::ParsingException(std::wstring message, size_t column,
+                                     size_t line)
+      : message(message), column(column), line(line)
   {
   }
 
@@ -17,12 +17,11 @@ namespace Vypr
   {
   }
 
-  CLangToken CLangLexer::GetToken(std::wistream& source)
+  CLangToken CLangLexer::GetToken(std::wistream &source)
   {
     SkipWhitespace(source);
 
-    if (!source.good() ||
-      source.peek() == std::char_traits<wchar_t>::eof())
+    if (!source.good() || source.peek() == std::char_traits<wchar_t>::eof())
     {
       return {};
     }
@@ -34,11 +33,11 @@ namespace Vypr
     source.unget();
 
     if (iswdigit(source.peek()) ||
-      (source.peek() == '.' && iswdigit(lookAhead)))
+        (source.peek() == '.' && iswdigit(lookAhead)))
     {
       return ParseNumericalConstant(source);
     }
-    else if (PunctuatorMap.contains(std::wstring{ source.peek() }))
+    else if (PunctuatorMap.contains(std::wstring{source.peek()}))
     {
       return ParsePunctuator(source);
     }
@@ -55,15 +54,15 @@ namespace Vypr
       return ParseIdentifier(source);
     }
 
-    throw ParsingException(std::format(L"Unknown token {} found.",
-      source.peek()), m_currentColumn, m_currentLine);
+    throw ParsingException(
+        std::format(L"Unknown token {} found.", source.peek()), m_currentColumn,
+        m_currentLine);
   }
 
-  void CLangLexer::SkipWhitespace(std::wistream& source)
+  void CLangLexer::SkipWhitespace(std::wistream &source)
   {
-    while (source.good() &&
-      source.peek() != std::char_traits<wchar_t>::eof() &&
-      iswspace(source.peek()))
+    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
+           iswspace(source.peek()))
     {
       m_currentColumn += 1;
       if (source.peek() == '\n')
@@ -75,20 +74,16 @@ namespace Vypr
     }
   }
 
-  CLangToken CLangLexer::ParsePunctuator(std::wistream& source)
+  CLangToken CLangLexer::ParsePunctuator(std::wistream &source)
   {
-    CLangToken token = {
-      .line = m_currentLine,
-      .column = m_currentColumn
-    };
-    while (source.good() &&
-      source.peek() != std::char_traits<wchar_t>::eof())
+    CLangToken token = {.line = m_currentLine, .column = m_currentColumn};
+    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof())
     {
       token.content += source.get();
       m_currentColumn += 1;
 
       if (!PunctuatorMap.contains(token.content) &&
-        !(token.content == L".." && source.peek() == '.'))
+          !(token.content == L".." && source.peek() == '.'))
       {
         token.content.pop_back();
         source.unget();
@@ -100,18 +95,15 @@ namespace Vypr
     return token;
   }
 
-  CLangToken CLangLexer::ParseIdentifier(std::wistream& source)
+  CLangToken CLangLexer::ParseIdentifier(std::wistream &source)
   {
-    CLangToken token = {
-      .type = CLangTokenType::Identifier,
-      .line = m_currentLine,
-      .column = m_currentColumn
-    };
-    while (source.good() &&
-      source.peek() != std::char_traits<wchar_t>::eof() &&
-      !PunctuatorMap.contains(std::wstring{ source.peek() }) &&
-      source.peek() != '"' && source.peek() != '\'' &&
-      !iswspace(source.peek()))
+    CLangToken token = {.type = CLangTokenType::Identifier,
+                        .line = m_currentLine,
+                        .column = m_currentColumn};
+    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
+           !PunctuatorMap.contains(std::wstring{source.peek()}) &&
+           source.peek() != '"' && source.peek() != '\'' &&
+           !iswspace(source.peek()))
     {
       token.content += source.get();
       m_currentColumn += 1;
@@ -122,7 +114,7 @@ namespace Vypr
         if (uChar.empty())
         {
           throw ParsingException(L"Malformatted universal character",
-            token.column, token.line);
+                                 token.column, token.line);
         }
         token.content += uChar;
       }
@@ -136,7 +128,7 @@ namespace Vypr
     return token;
   }
 
-  std::wstring CLangLexer::ParseUniversalCharacter(std::wistream& source)
+  std::wstring CLangLexer::ParseUniversalCharacter(std::wistream &source)
   {
     constexpr size_t Utf16CodeSize = 4;
     constexpr size_t Utf32CodeSize = 8;
@@ -153,12 +145,12 @@ namespace Vypr
     source.read(unicodeCharacter.data(), codeSize);
     m_currentColumn += codeSize;
 
-    if (source.fail() ||
-      std::find_if(unicodeCharacter.begin(), unicodeCharacter.end(),
-        [](wchar_t c)
-        {
-          return !iswdigit(c) && towlower(c) < 'a' && towlower(c) > 'f';
-        }) != unicodeCharacter.end())
+    if (source.fail() || std::find_if(unicodeCharacter.begin(),
+                                      unicodeCharacter.end(), [](wchar_t c) {
+                                        return !iswdigit(c) &&
+                                               towlower(c) < 'a' &&
+                                               towlower(c) > 'f';
+                                      }) != unicodeCharacter.end())
     {
       return L"";
     }
@@ -179,13 +171,11 @@ namespace Vypr
     return buffer;
   }
 
-  CLangToken CLangLexer::ParseNumericalConstant(std::wistream& source)
+  CLangToken CLangLexer::ParseNumericalConstant(std::wistream &source)
   {
-    CLangToken token = {
-      .type = CLangTokenType::IntegerConstant,
-      .line = m_currentLine,
-      .column = m_currentColumn
-    };
+    CLangToken token = {.type = CLangTokenType::IntegerConstant,
+                        .line = m_currentLine,
+                        .column = m_currentColumn};
 
     // TODO: A better stream needs to be made.
     source.ignore();
@@ -205,8 +195,8 @@ namespace Vypr
       token.content += towlower(source.get());
       m_currentColumn += 2;
 
-      const auto& [isFloatingPoint, content] = ParseFloatableConstant(source,
-        &CLangLexer::ParseHexadecimalSequence, 'p', true);
+      const auto &[isFloatingPoint, content] = ParseFloatableConstant(
+          source, &CLangLexer::ParseHexadecimalSequence, 'p', true);
       token.content += content;
       if (isFloatingPoint)
       {
@@ -215,8 +205,8 @@ namespace Vypr
     }
     else
     {
-      const auto& [isFloatingPoint, content] = ParseFloatableConstant(source,
-        &CLangLexer::ParseIntegerSequence, 'e', false);
+      const auto &[isFloatingPoint, content] = ParseFloatableConstant(
+          source, &CLangLexer::ParseIntegerSequence, 'e', false);
       token.content += content;
       if (isFloatingPoint)
       {
@@ -236,36 +226,35 @@ namespace Vypr
     return token;
   }
 
-  std::wstring CLangLexer::ParseBinaryConstant(std::wistream& source)
+  std::wstring CLangLexer::ParseBinaryConstant(std::wistream &source)
   {
     std::wstring buffer;
-    while (source.good() &&
-      source.peek() != std::char_traits<wchar_t>::eof() &&
-      iswdigit(source.peek()))
+    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
+           iswdigit(source.peek()))
     {
       buffer += source.get();
       m_currentColumn += 1;
       if (buffer.back() != '0' && buffer.back() != '1')
       {
         throw ParsingException(
-          std::format(L"{} is not a valid binary number.", buffer),
-          m_currentColumn, m_currentLine);
+            std::format(L"{} is not a valid binary number.", buffer),
+            m_currentColumn, m_currentLine);
       }
     }
 
     if (buffer.empty())
     {
       throw ParsingException(L"Expected binary number.", m_currentColumn,
-        m_currentLine);
+                             m_currentLine);
     }
 
     return buffer;
   }
 
   std::tuple<bool, std::wstring> CLangLexer::ParseFloatableConstant(
-    std::wistream& source,
-     std::wstring(CLangLexer::* parser)(std::wistream&),
-    char exponentDelimiter, bool requireExponent)
+      std::wistream &source,
+      std::wstring (CLangLexer::*parser)(std::wistream &),
+      char exponentDelimiter, bool requireExponent)
   {
     std::wstring buffer;
     bool isFloatingPoint = false;
@@ -286,7 +275,7 @@ namespace Vypr
       {
         buffer += (this->*parser)(source);
       }
-      catch (const ParsingException& e)
+      catch (const ParsingException &e)
       {
         if (buffer == L".")
         {
@@ -311,18 +300,17 @@ namespace Vypr
     else if (isFloatingPoint && requireExponent)
     {
       throw ParsingException(L"Invalid numerical constant.", m_currentColumn,
-        m_currentLine);
+                             m_currentLine);
     }
 
-    return { isFloatingPoint, buffer };
+    return {isFloatingPoint, buffer};
   }
 
-  std::wstring CLangLexer::ParseHexadecimalSequence(std::wistream& source)
+  std::wstring CLangLexer::ParseHexadecimalSequence(std::wistream &source)
   {
     std::wstring buffer;
-    while (source.good() &&
-      source.peek() != std::char_traits<wchar_t>::eof() &&
-      iswxdigit(source.peek()))
+    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
+           iswxdigit(source.peek()))
     {
       buffer += towlower(source.get());
       m_currentColumn += 1;
@@ -331,18 +319,17 @@ namespace Vypr
     if (buffer.empty())
     {
       throw ParsingException(L"Expected hexadecimal number.", m_currentColumn,
-        m_currentLine);
+                             m_currentLine);
     }
 
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseIntegerSequence(std::wistream& source)
+  std::wstring CLangLexer::ParseIntegerSequence(std::wistream &source)
   {
     std::wstring buffer;
-    while (source.good() &&
-      source.peek() != std::char_traits<wchar_t>::eof() &&
-      iswdigit(source.peek()))
+    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
+           iswdigit(source.peek()))
     {
       buffer += source.get();
       m_currentColumn += 1;
@@ -351,20 +338,19 @@ namespace Vypr
     if (buffer.empty())
     {
       throw ParsingException(L"Expected decimal number.", m_currentColumn,
-        m_currentLine);
+                             m_currentLine);
     }
 
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseIntegerSuffix(std::wistream& source)
+  std::wstring CLangLexer::ParseIntegerSuffix(std::wistream &source)
   {
     std::wstring buffer;
     bool signUsed = false;
     bool sizeUsed = false;
-    while (source.good() &&
-      source.peek() != std::char_traits<wchar_t>::eof() &&
-      iswalpha(source.peek()))
+    while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
+           iswalpha(source.peek()))
     {
       buffer += towlower(source.get());
       m_currentColumn += 1;
@@ -374,8 +360,9 @@ namespace Vypr
         if (signUsed)
         {
           throw ParsingException(
-            std::format(L"Invalid suffix for integer constant {}",
-              source.get()), m_currentColumn, m_currentLine);
+              std::format(L"Invalid suffix for integer constant {}",
+                          source.get()),
+              m_currentColumn, m_currentLine);
         }
         signUsed = true;
       }
@@ -384,22 +371,24 @@ namespace Vypr
         if (sizeUsed && buffer[buffer.size() - 2] != 'l')
         {
           throw ParsingException(
-            std::format(L"Invalid suffix for integer constant {}",
-              source.get()), m_currentColumn, m_currentLine);
+              std::format(L"Invalid suffix for integer constant {}",
+                          source.get()),
+              m_currentColumn, m_currentLine);
         }
         sizeUsed = true;
       }
       else
       {
         throw ParsingException(
-          std::format(L"Invalid suffix for integer constant {}",
-            source.get()), m_currentColumn, m_currentLine);
+            std::format(L"Invalid suffix for integer constant {}",
+                        source.get()),
+            m_currentColumn, m_currentLine);
       }
     }
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseFloatSuffix(std::wistream& source)
+  std::wstring CLangLexer::ParseFloatSuffix(std::wistream &source)
   {
     if (towlower(source.peek()) == 'l')
     {
@@ -416,10 +405,11 @@ namespace Vypr
     else if (iswalpha(source.peek()))
     {
       throw ParsingException(
-        std::format(L"Invalid suffix for floating point constant {}",
-          source.get()), m_currentColumn, m_currentLine);
+          std::format(L"Invalid suffix for floating point constant {}",
+                      source.get()),
+          m_currentColumn, m_currentLine);
     }
 
     return {};
   }
-}
+} // namespace Vypr

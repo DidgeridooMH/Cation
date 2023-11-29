@@ -32,19 +32,20 @@ namespace CLangLexerTest
     EXPECT_TRUE(remaining.empty());
   }
 
-#define TEST_GET_TOKEN(testName, name, testStr) \
-    TEST(GetToken, testName ## name) { \
-      Vypr::CLangLexer lexer; \
-      std::wstringstream testStream(testStr L" aaa"); \
-      Vypr::CLangToken token = lexer.GetToken(testStream); \
-      std::wstring remaining; \
-      testStream >> remaining; \
-      EXPECT_EQ(token.type, Vypr::CLangTokenType:: ## name); \
-      EXPECT_EQ(token.line, 1ULL); \
-      EXPECT_EQ(token.column, 1ULL); \
-      EXPECT_EQ(token.content, std::wstring(testStr)); \
-      EXPECT_EQ(remaining, L"aaa"); \
-    }
+#define TEST_GET_TOKEN(testName, name, testStr)                                \
+  TEST(GetToken, testName##name)                                               \
+  {                                                                            \
+    Vypr::CLangLexer lexer;                                                    \
+    std::wstringstream testStream(testStr L" aaa");                            \
+    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
+    std::wstring remaining;                                                    \
+    testStream >> remaining;                                                   \
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::##name);                       \
+    EXPECT_EQ(token.line, 1ULL);                                               \
+    EXPECT_EQ(token.column, 1ULL);                                             \
+    EXPECT_EQ(token.content, std::wstring(testStr));                           \
+    EXPECT_EQ(remaining, L"aaa");                                              \
+  }
 
   TEST_GET_TOKEN(Operator, LeftBracket, L"[");
   TEST_GET_TOKEN(Operator, RightBracket, L"]");
@@ -163,19 +164,20 @@ namespace CLangLexerTest
     EXPECT_TRUE(remaining.empty());
   }
 
-#define TEST_IDENT_GET_TOKEN(name, testStr) \
-    TEST(GetToken, Identifier ## name) { \
-      Vypr::CLangLexer lexer; \
-      std::wstringstream testStream(testStr); \
-      Vypr::CLangToken token = lexer.GetToken(testStream); \
-      std::wstring remaining; \
-      testStream >> remaining; \
-      EXPECT_EQ(token.type, Vypr::CLangTokenType::Identifier); \
-      EXPECT_EQ(token.line, 1ULL); \
-      EXPECT_EQ(token.column, 1ULL); \
-      EXPECT_EQ(token.content, std::wstring(testStr)); \
-      EXPECT_TRUE(remaining.empty());  \
-    }
+#define TEST_IDENT_GET_TOKEN(name, testStr)                                    \
+  TEST(GetToken, Identifier##name)                                             \
+  {                                                                            \
+    Vypr::CLangLexer lexer;                                                    \
+    std::wstringstream testStream(testStr);                                    \
+    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
+    std::wstring remaining;                                                    \
+    testStream >> remaining;                                                   \
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::Identifier);                   \
+    EXPECT_EQ(token.line, 1ULL);                                               \
+    EXPECT_EQ(token.column, 1ULL);                                             \
+    EXPECT_EQ(token.content, std::wstring(testStr));                           \
+    EXPECT_TRUE(remaining.empty());                                            \
+  }
 
   TEST_IDENT_GET_TOKEN(OnlyLowercase, L"alexander");
   TEST_IDENT_GET_TOKEN(OnlyUppercase, L"ALEXANDER");
@@ -187,25 +189,30 @@ namespace CLangLexerTest
   TEST_IDENT_GET_TOKEN(SingleLetter, L"i");
   TEST_IDENT_GET_TOKEN(Unicode, L"◕‿◕");
 
-#define TEST_IDENT_GET_TOKEN_W_RESULT(name, testStr, result) \
-    TEST(GetToken, Identifier ## name) { \
-      Vypr::CLangLexer lexer; \
-      std::wstringstream testStream(testStr); \
-      Vypr::CLangToken token = lexer.GetToken(testStream); \
-      std::wstring remaining; \
-      testStream >> remaining; \
-      EXPECT_EQ(token.type, Vypr::CLangTokenType::Identifier); \
-      EXPECT_EQ(token.line, 1ULL); \
-      EXPECT_EQ(token.column, 1ULL); \
-      EXPECT_EQ(token.content, std::wstring(result)); \
-      EXPECT_TRUE(remaining.empty()); \
-    }
+#define TEST_IDENT_GET_TOKEN_W_RESULT(name, testStr, result)                   \
+  TEST(GetToken, Identifier##name)                                             \
+  {                                                                            \
+    Vypr::CLangLexer lexer;                                                    \
+    std::wstringstream testStream(testStr);                                    \
+    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
+    std::wstring remaining;                                                    \
+    testStream >> remaining;                                                   \
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::Identifier);                   \
+    EXPECT_EQ(token.line, 1ULL);                                               \
+    EXPECT_EQ(token.column, 1ULL);                                             \
+    EXPECT_EQ(token.content, std::wstring(result));                            \
+    EXPECT_TRUE(remaining.empty());                                            \
+  }
 
   TEST_IDENT_GET_TOKEN_W_RESULT(Universal4, L"\\u2343abc", L"\u2343abc");
-  TEST_IDENT_GET_TOKEN_W_RESULT(Universal8, L"\\U00029617abc", L"\U00029617abc");
-  TEST_IDENT_GET_TOKEN_W_RESULT(Universal8NoHigh, L"\\U00009617abc", L"\U00009617abc");
-  TEST_IDENT_GET_TOKEN_W_RESULT(Universal4Inside, L"hello\\u2343there", L"hello\u2343there");
-  TEST_IDENT_GET_TOKEN_W_RESULT(Universal8Inside, L"hello\\U00029617there", L"hello\U00029617there");
+  TEST_IDENT_GET_TOKEN_W_RESULT(Universal8, L"\\U00029617abc",
+                                L"\U00029617abc");
+  TEST_IDENT_GET_TOKEN_W_RESULT(Universal8NoHigh, L"\\U00009617abc",
+                                L"\U00009617abc");
+  TEST_IDENT_GET_TOKEN_W_RESULT(Universal4Inside, L"hello\\u2343there",
+                                L"hello\u2343there");
+  TEST_IDENT_GET_TOKEN_W_RESULT(Universal8Inside, L"hello\\U00029617there",
+                                L"hello\U00029617there");
 
   TEST_GET_TOKEN(Keyword, Auto, L"auto");
   TEST_GET_TOKEN(Keyword, Break, L"break");
@@ -252,36 +259,36 @@ namespace CLangLexerTest
   TEST_GET_TOKEN(Keyword, StaticAssert, L"_Static_assert");
   TEST_GET_TOKEN(Keyword, ThreadLocal, L"_Thread_local");
 
-#define TEST_GET_TOKEN_CONSTANT(name, testStr, resultStr, tokenType) \
-  TEST(GetToken, NumericConstant ## name)                           \
-  {                                                                 \
-    Vypr::CLangLexer lexer;                                       \
-    std::wstringstream testStream(testStr);                         \
-                                                                    \
-    Vypr::CLangToken token = lexer.GetToken(testStream);          \
-    std::wstring remaining;                                         \
-    testStream >> remaining;                                        \
-                                                                    \
-    EXPECT_EQ(token.type, Vypr::CLangTokenType::tokenType); \
-    EXPECT_EQ(token.content, resultStr);                            \
-    EXPECT_EQ(token.line, 1);                                       \
-    EXPECT_EQ(token.column, 1);                                     \
-    EXPECT_TRUE(remaining.empty());                                 \
+#define TEST_GET_TOKEN_CONSTANT(name, testStr, resultStr, tokenType)           \
+  TEST(GetToken, NumericConstant##name)                                        \
+  {                                                                            \
+    Vypr::CLangLexer lexer;                                                    \
+    std::wstringstream testStream(testStr);                                    \
+                                                                               \
+    Vypr::CLangToken token = lexer.GetToken(testStream);                       \
+    std::wstring remaining;                                                    \
+    testStream >> remaining;                                                   \
+                                                                               \
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::tokenType);                    \
+    EXPECT_EQ(token.content, resultStr);                                       \
+    EXPECT_EQ(token.line, 1);                                                  \
+    EXPECT_EQ(token.column, 1);                                                \
+    EXPECT_TRUE(remaining.empty());                                            \
   }
 
-#define TEST_GET_TOKEN_CONSTANT_INTEGER(name, testStr, resultStr) \
+#define TEST_GET_TOKEN_CONSTANT_INTEGER(name, testStr, resultStr)              \
   TEST_GET_TOKEN_CONSTANT(name, testStr, resultStr, IntegerConstant)
 
-#define TEST_GET_TOKEN_CONSTANT_FLOAT(name, testStr, resultStr) \
+#define TEST_GET_TOKEN_CONSTANT_FLOAT(name, testStr, resultStr)                \
   TEST_GET_TOKEN_CONSTANT(name, testStr, resultStr, FloatConstant)
 
-#define TEST_GET_TOKEN_THROW(name, testStr)            \
-  TEST(GetToken, NumericConstant ## name)                           \
-  {                                                                 \
-    Vypr::CLangLexer lexer;                                       \
-    std::wstringstream testStream(testStr);                         \
-                                                                    \
-    EXPECT_THROW((void)lexer.GetToken(testStream), Vypr::ParsingException); \
+#define TEST_GET_TOKEN_THROW(name, testStr)                                    \
+  TEST(GetToken, NumericConstant##name)                                        \
+  {                                                                            \
+    Vypr::CLangLexer lexer;                                                    \
+    std::wstringstream testStream(testStr);                                    \
+                                                                               \
+    EXPECT_THROW((void)lexer.GetToken(testStream), Vypr::ParsingException);    \
   }
 
   TEST_GET_TOKEN_CONSTANT_INTEGER(BinaryZero, L"0b0", L"0b0");
@@ -317,16 +324,26 @@ namespace CLangLexerTest
   TEST_GET_TOKEN_CONSTANT_INTEGER(HexSuffixLLU, L"0x1llu", L"0x1llu");
   TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPoint, L"0xDED.ADp3", L"0xded.adp3");
   TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNoBase, L"0x.ADp3", L"0x.adp3");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNoFraction, L"0x1.p3", L"0x1.p3");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointLongExponent, L"0x.ADp323", L"0x.adp323");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointUppercaseExponent, L"0x.ADP323", L"0x.adp323");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointZeroExponent, L"0xded.ADp0", L"0xded.adp0");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointPositiveExponent, L"0xded.ADp+323", L"0xded.adp+323");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNegativeExponent, L"0xded.ADp-323", L"0xded.adp-323");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixF, L"0xDED.ADp3F", L"0xded.adp3f");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixf, L"0xDED.ADp3f", L"0xded.adp3f");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixL, L"0xDED.ADp3L", L"0xded.adp3l");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixl, L"0xDED.ADp3l", L"0xded.adp3l");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNoFraction, L"0x1.p3",
+                                L"0x1.p3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointLongExponent, L"0x.ADp323",
+                                L"0x.adp323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointUppercaseExponent, L"0x.ADP323",
+                                L"0x.adp323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointZeroExponent, L"0xded.ADp0",
+                                L"0xded.adp0");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointPositiveExponent,
+                                L"0xded.ADp+323", L"0xded.adp+323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointNegativeExponent,
+                                L"0xded.ADp-323", L"0xded.adp-323");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixF, L"0xDED.ADp3F",
+                                L"0xded.adp3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixf, L"0xDED.ADp3f",
+                                L"0xded.adp3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixL, L"0xDED.ADp3L",
+                                L"0xded.adp3l");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(HexFloatingPointSuffixl, L"0xDED.ADp3l",
+                                L"0xded.adp3l");
   TEST_GET_TOKEN_THROW(HexBadSuffix, L"0x21Z");
   TEST_GET_TOKEN_THROW(HexSuffixUU, L"0xaEUU");
   TEST_GET_TOKEN_THROW(HexSuffixLUL, L"0xdelul");
@@ -346,23 +363,35 @@ namespace CLangLexerTest
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLL, L"1ll", L"1ll");
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixULL, L"1ull", L"1ull");
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLLU, L"1llu", L"1llu");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNoFraction, L"12e3", L"12e3");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointZeroExponent, L"12e0", L"12e0");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointPositiveExponent, L"12e+23", L"12e+23");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNegativeExponent, L"12e-23", L"12e-23");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNoFraction, L"12e3",
+                                  L"12e3");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointZeroExponent, L"12e0",
+                                  L"12e0");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointPositiveExponent,
+                                  L"12e+23", L"12e+23");
+  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNegativeExponent,
+                                  L"12e-23", L"12e-23");
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalZeroExponent, L"0e3", L"0e3");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalZeroFloat, L"0.0", L"0.0");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalZeroFloatNoFraction, L"0.", L"0.");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPoint, L"1434.23e3", L"1434.23e3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPoint, L"1434.23e3",
+                                L"1434.23e3");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNoBase, L".12", L".12");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNoExponent, L"12.0", L"12.0");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointLongExponent, L"12.0e123", L"12.0e123");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointUppercaseExponent, L"12.0E123", L"12.0e123");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixF, L"23.3F", L"23.3f");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixf, L"23.3f", L"23.3f");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixL, L"23.3L", L"23.3l");
-  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixl, L"23.3l", L"23.3l");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNoExponent, L"12.0",
+                                L"12.0");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointLongExponent, L"12.0e123",
+                                L"12.0e123");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointUppercaseExponent,
+                                L"12.0E123", L"12.0e123");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixF, L"23.3F",
+                                L"23.3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixf, L"23.3f",
+                                L"23.3f");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixL, L"23.3L",
+                                L"23.3l");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointSuffixl, L"23.3l",
+                                L"23.3l");
   TEST_GET_TOKEN_THROW(DecimalBadSuffix, L"12.0Z");
   TEST_GET_TOKEN_THROW(DecimalSuffixUU, L"12UU");
   TEST_GET_TOKEN_THROW(DecimalSuffixLUL, L"12lul");
-}
+} // namespace CLangLexerTest

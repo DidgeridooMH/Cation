@@ -26,4 +26,4 @@ namespace Vypr
     /// <summary>1-indexed column of the file token was created from.</summary>
     size_t column = NoPosition;
   };
-}
+} // namespace Vypr

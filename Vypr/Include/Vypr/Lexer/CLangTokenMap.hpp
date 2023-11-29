@@ -20,4 +20,4 @@ namespace Vypr
   /// Map punctuation token types using their string values.
   /// </summary>
   extern const CLangTokenMap PunctuatorMap;
-}
+} // namespace Vypr
