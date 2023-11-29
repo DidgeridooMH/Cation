@@ -1,6 +1,8 @@
+#include "Vypr/Lexer/CLangLexer.hpp"
+
 #include <istream>
 #include <string>
-#include "Vypr/Lexer/CLangLexer.hpp"
+
 #include "Vypr/Lexer/CLangTokenMap.hpp"
 #include "Vypr/Lexer/CLangTokenType.hpp"
 
@@ -36,7 +38,8 @@ namespace Vypr
     {
       return ParseNumericalConstant(source);
     }
-    else if (PunctuatorMap.contains(std::wstring{source.peek()}))
+    else if (PunctuatorMap.contains(
+                 std::wstring{static_cast<wchar_t>(source.peek())}))
     {
       return ParsePunctuator(source);
     }
@@ -100,7 +103,8 @@ namespace Vypr
                         .line = m_currentLine,
                         .column = m_currentColumn};
     while (source.good() && source.peek() != std::char_traits<wchar_t>::eof() &&
-           !PunctuatorMap.contains(std::wstring{source.peek()}) &&
+           !PunctuatorMap.contains(
+               std::wstring{static_cast<wchar_t>(source.peek())}) &&
            source.peek() != '"' && source.peek() != '\'' &&
            !iswspace(source.peek()))
     {
@@ -156,6 +160,7 @@ namespace Vypr
 
     std::wstring buffer;
     uint32_t codepoint = std::stoi(unicodeCharacter, nullptr, 16);
+#ifdef _WIN32
     if (codeSize == Utf16CodeSize || codepoint < 0x10000)
     {
       buffer += static_cast<wchar_t>(codepoint);
@@ -166,6 +171,9 @@ namespace Vypr
       buffer += static_cast<wchar_t>(((codepoint >> 10) & 0x3FF) | 0xD800);
       buffer += static_cast<wchar_t>((codepoint & 0x3FF) | 0xDC00);
     }
+#else
+    buffer += static_cast<wchar_t>(codepoint);
+#endif
 
     return buffer;
   }

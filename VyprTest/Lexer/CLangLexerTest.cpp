@@ -1,7 +1,9 @@
-﻿#include <gtest/gtest.h>
+﻿#include "Vypr/Lexer/CLangLexer.hpp"
+
+#include <gtest/gtest.h>
 #include <iosfwd>
 #include <string>
-#include "Vypr/Lexer/CLangLexer.hpp"
+
 #include "Vypr/Lexer/CLangToken.hpp"
 
 namespace CLangLexerTest
@@ -40,7 +42,7 @@ namespace CLangLexerTest
     Vypr::CLangToken token = lexer.GetToken(testStream);                       \
     std::wstring remaining;                                                    \
     testStream >> remaining;                                                   \
-    EXPECT_EQ(token.type, Vypr::CLangTokenType::##name);                       \
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::name);                         \
     EXPECT_EQ(token.line, 1ULL);                                               \
     EXPECT_EQ(token.column, 1ULL);                                             \
     EXPECT_EQ(token.content, std::wstring(testStr));                           \

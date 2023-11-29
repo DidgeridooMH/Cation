@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+
 #include "Vypr/Lexer/CLangTokenType.hpp"
 
 namespace Vypr

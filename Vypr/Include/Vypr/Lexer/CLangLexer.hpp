@@ -3,6 +3,7 @@
 #include <exception>
 #include <iosfwd>
 #include <string>
+
 #include "Vypr/Lexer/CLangToken.hpp"
 
 // TODO: Replace istream with a variant that counts col,line for you.
