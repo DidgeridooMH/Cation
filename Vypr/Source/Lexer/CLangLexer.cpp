@@ -1,11 +1,11 @@
 #include <format>
 #include <istream>
 #include <string>
-#include "CLangLexer.hpp"
-#include "CLangTokenMap.hpp"
-#include "CLangTokenType.hpp"
+#include "Vypr/Lexer/CLangLexer.hpp"
+#include "Vypr/Lexer/CLangTokenMap.hpp"
+#include "Vypr/Lexer/CLangTokenType.hpp"
 
-namespace Cation
+namespace Vypr
 {
   ParsingException::ParsingException(std::wstring message,
     size_t column, size_t line)

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
-#include "CLangTokenType.hpp"
+#include "Vypr/Lexer/CLangTokenType.hpp"
 
-namespace Cation
+namespace Vypr
 {
   /// <summary>
   /// Token emitted by the lexer. These tokens are defined in the C language

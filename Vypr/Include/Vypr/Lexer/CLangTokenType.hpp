@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Cation
+namespace Vypr
 {
   /// <summary>
   /// Token types for the C language grammar.

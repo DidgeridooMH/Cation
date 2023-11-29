@@ -2,9 +2,9 @@
 
 #include <string>
 #include <unordered_map>
-#include "CLangTokenType.hpp"
+#include "Vypr/Lexer/CLangTokenType.hpp"
 
-namespace Cation
+namespace Vypr
 {
   /// <summary>
   /// Helper for mapping strings to their token types.

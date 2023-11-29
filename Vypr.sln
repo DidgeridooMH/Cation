@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cation", "Cation\Cation.vcxproj", "{2EFEE775-EE1D-48A3-8F3F-2CF272EF80BE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Vypr", "Vypr\Vypr.vcxproj", "{2EFEE775-EE1D-48A3-8F3F-2CF272EF80BE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CationTest", "CationTest\CationTest.vcxproj", "{3EB86853-49CA-4399-B8FD-A8C8AC2E3306}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VyprTest", "VyprTest\VyprTest.vcxproj", "{3EB86853-49CA-4399-B8FD-A8C8AC2E3306}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

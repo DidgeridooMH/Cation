@@ -3,10 +3,10 @@
 #include <exception>
 #include <iosfwd>
 #include <string>
-#include "CLangToken.hpp"
+#include "Vypr/Lexer/CLangToken.hpp"
 
 // TODO: Replace istream with a variant that counts col,line for you.
-namespace Cation
+namespace Vypr
 {
   // TODO: Document
   struct ParsingException : std::exception

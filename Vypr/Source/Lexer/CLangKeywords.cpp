@@ -1,6 +1,6 @@
-#include "CLangTokenMap.hpp"
+#include "Vypr/Lexer/CLangTokenMap.hpp"
 
-namespace Cation
+namespace Vypr
 {
   const CLangTokenMap KeywordMap = {
     { L"auto", CLangTokenType::Auto },

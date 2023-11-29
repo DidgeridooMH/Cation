@@ -35,16 +35,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Source\Lexer\CLangTokenType.hpp">
+    <ClInclude Include="Include\Vypr\Lexer\CLangLexer.hpp">
       <Filter>Header Files\Lexer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Lexer\CLangLexer.hpp">
+    <ClInclude Include="Include\Vypr\Lexer\CLangToken.hpp">
       <Filter>Header Files\Lexer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Lexer\CLangToken.hpp">
+    <ClInclude Include="Include\Vypr\Lexer\CLangTokenMap.hpp">
       <Filter>Header Files\Lexer</Filter>
     </ClInclude>
-    <ClInclude Include="Source\Lexer\CLangTokenMap.hpp">
+    <ClInclude Include="Include\Vypr\Lexer\CLangTokenType.hpp">
       <Filter>Header Files\Lexer</Filter>
     </ClInclude>
   </ItemGroup>
