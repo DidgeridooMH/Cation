@@ -1,6 +1,5 @@
 #include "Vypr/Lexer/CLangLexer.hpp"
 
-#include <istream>
 #include <string>
 
 #include "Vypr/Lexer/CLangTokenMap.hpp"
@@ -16,38 +15,47 @@ namespace Vypr
 
   CLangToken CLangLexer::GetToken(Scanner &source)
   {
-    source.NextWhile(reinterpret_cast<bool (*)(wchar_t)>(iswspace));
+    while (!source.Finished())
+    {
+      source.NextWhile(reinterpret_cast<bool (*)(wchar_t)>(iswspace));
 
-    if (source.Finished())
-    {
-      return {};
+      if (source.LookAhead(0, 2) == L"//")
+      {
+        source.NextWhile([](wchar_t c) { return c != '\n'; });
+      }
+      else if (source.LookAhead(0, 2) == L"/*")
+      {
+        source.Next(2);
+        while (!source.Finished() && source.LookAhead(0, 2) != L"*/")
+        {
+          source.Next();
+        }
+        source.Next(2);
+      }
+      else if (iswdigit(source.LookAhead(0)) ||
+               (source.LookAhead(0) == '.' && iswdigit(source.LookAhead(1))))
+      {
+        return ParseNumericalConstant(source);
+      }
+      else if (PunctuatorMap.contains(source.LookAhead(0, 1)))
+      {
+        return ParsePunctuator(source);
+      }
+      else if (source.LookAhead(0) == '\'')
+      {
+        return ParseCharacterConstant(source);
+      }
+      else if (source.LookAhead(0) == '"')
+      {
+        return ParseStringLiteral(source);
+      }
+      else if (!source.Finished())
+      {
+        return ParseIdentifier(source);
+      }
     }
 
-    if (iswdigit(source.LookAhead(0)) ||
-        (source.LookAhead(0) == '.' && iswdigit(source.LookAhead(1))))
-    {
-      return ParseNumericalConstant(source);
-    }
-    else if (PunctuatorMap.contains(source.LookAhead(0, 1)))
-    {
-      return ParsePunctuator(source);
-    }
-    else if (source.LookAhead(0) == '\'')
-    {
-      return ParseCharacterConstant(source);
-    }
-    else if (source.LookAhead(0) == '"')
-    {
-      return ParseStringLiteral(source);
-    }
-    else
-    {
-      return ParseIdentifier(source);
-    }
-
-    throw ParsingException(L"Unknown token " + source.LookAhead(0, 1) +
-                               L" found.",
-                           source.GetColumn(), source.GetLine());
+    return {};
   }
 
   CLangToken CLangLexer::ParsePunctuator(Scanner &source)

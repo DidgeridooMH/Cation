@@ -461,4 +461,60 @@ namespace CLangLexerTest
   TEST_GET_TOKEN_STRING_CONSTANT(EmptyString, L"\"\"", L"");
   TEST_GET_TOKEN_THROW(MissingTerminatorStringLiteral, L"\"a");
   TEST_GET_TOKEN_THROW(NewlineInStringLiteral, L"\"a\n\"");
+
+  TEST(GetToken, SingleLineComment)
+  {
+    Vypr::CLangLexer lexer;
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"// Hello\nint");
+
+    Vypr::CLangToken token = lexer.GetToken(*testStream);
+
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::IntegerType);
+    EXPECT_EQ(token.column, 1);
+    EXPECT_EQ(token.line, 2);
+    EXPECT_EQ(token.content, L"int");
+  }
+
+  TEST(GetToken, MultiLineOneLineComment)
+  {
+    Vypr::CLangLexer lexer;
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"/* Hello */int");
+
+    Vypr::CLangToken token = lexer.GetToken(*testStream);
+
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::IntegerType);
+    EXPECT_EQ(token.column, 12);
+    EXPECT_EQ(token.line, 1);
+    EXPECT_EQ(token.content, L"int");
+  }
+
+  TEST(GetToken, MultiLineSplitLineComment)
+  {
+    Vypr::CLangLexer lexer;
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"/* Hello */\nint");
+
+    Vypr::CLangToken token = lexer.GetToken(*testStream);
+
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::IntegerType);
+    EXPECT_EQ(token.column, 1);
+    EXPECT_EQ(token.line, 2);
+    EXPECT_EQ(token.content, L"int");
+  }
+
+  TEST(GetToken, MultiLineManyLineComment)
+  {
+    Vypr::CLangLexer lexer;
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(L"/* \nHello \n*/\nint");
+
+    Vypr::CLangToken token = lexer.GetToken(*testStream);
+
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::IntegerType);
+    EXPECT_EQ(token.column, 1);
+    EXPECT_EQ(token.line, 4);
+    EXPECT_EQ(token.content, L"int");
+  }
 } // namespace CLangLexerTest
