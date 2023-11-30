@@ -10,6 +10,7 @@ namespace Vypr
     NoToken,
     IntegerConstant,
     FloatConstant,
+    CharacterConstant,
     StringLiteral,
     Identifier,
     LeftBracket,

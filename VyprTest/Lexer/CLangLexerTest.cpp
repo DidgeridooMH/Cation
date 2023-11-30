@@ -398,4 +398,39 @@ namespace CLangLexerTest
   TEST_GET_TOKEN_THROW(DecimalBadSuffix, L"12.0Z");
   TEST_GET_TOKEN_THROW(DecimalSuffixUU, L"12UU");
   TEST_GET_TOKEN_THROW(DecimalSuffixLUL, L"12lul");
+
+#define TEST_GET_TOKEN_CHAR_CONSTANT(name, testStr, resultStr)                 \
+  TEST(GetToken, CharacterConstant##name)                                      \
+  {                                                                            \
+    Vypr::CLangLexer lexer;                                                    \
+    std::unique_ptr<Vypr::Scanner> testStream =                                \
+        std::make_unique<Vypr::StringScanner>(testStr);                        \
+                                                                               \
+    Vypr::CLangToken token = lexer.GetToken(*testStream);                      \
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; }); \
+                                                                               \
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::CharacterConstant);            \
+    EXPECT_EQ(token.content, resultStr);                                       \
+    EXPECT_EQ(token.line, 1);                                                  \
+    EXPECT_EQ(token.column, 1);                                                \
+    EXPECT_EQ(remaining, L"");                                                 \
+  }
+
+  TEST_GET_TOKEN_CHAR_CONSTANT(RegularCharacter, L"'a'", L"a");
+  TEST_GET_TOKEN_CHAR_CONSTANT(AlertCharacter, L"'\\a'", L"\a");
+  TEST_GET_TOKEN_CHAR_CONSTANT(BackspaceCharacter, L"'\\b'", L"\b");
+  TEST_GET_TOKEN_CHAR_CONSTANT(EscapeCharacter, L"'\\e'", L"\e");
+  TEST_GET_TOKEN_CHAR_CONSTANT(FormfeedCharacter, L"'\\f'", L"\f");
+  TEST_GET_TOKEN_CHAR_CONSTANT(NewlineCharacter, L"'\\n'", L"\n");
+  TEST_GET_TOKEN_CHAR_CONSTANT(CarriageReturnCharacter, L"'\\r'", L"\r");
+  TEST_GET_TOKEN_CHAR_CONSTANT(TabCharacter, L"'\\t'", L"\t");
+  TEST_GET_TOKEN_CHAR_CONSTANT(VerticalTabCharacter, L"'\\v'", L"\v");
+  TEST_GET_TOKEN_CHAR_CONSTANT(BackslashCharacter, L"'\\\\'", L"\\");
+  TEST_GET_TOKEN_CHAR_CONSTANT(SingleQuoteCharacter, L"'\\''", L"\'");
+  TEST_GET_TOKEN_CHAR_CONSTANT(DoubleQuoteCharacter, L"'\\\"'", L"\"");
+  TEST_GET_TOKEN_CHAR_CONSTANT(QuestionMarkCharacter, L"'\\?'", L"\?");
+  TEST_GET_TOKEN_CHAR_CONSTANT(OctalMarkCharacter, L"'\101'", L"A");
+  TEST_GET_TOKEN_CHAR_CONSTANT(HexMarkCharacter, L"'\x65'", L"e");
+  TEST_GET_TOKEN_CHAR_CONSTANT(Unicode16MarkCharacter, L"'\u0065'", L"e");
+  TEST_GET_TOKEN_CHAR_CONSTANT(Unicode32MarkCharacter, L"'\U00000065'", L"e");
 } // namespace CLangLexerTest

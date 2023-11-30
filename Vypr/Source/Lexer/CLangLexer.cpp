@@ -28,14 +28,13 @@ namespace Vypr
     {
       return ParseNumericalConstant(source);
     }
-    else if (PunctuatorMap.contains(
-                 std::wstring{static_cast<wchar_t>(source.LookAhead(0))}))
+    else if (PunctuatorMap.contains(source.LookAhead(0, 1)))
     {
       return ParsePunctuator(source);
     }
     else if (source.LookAhead(0) == '\'')
     {
-      // TODO
+      return ParseCharacterConstant(source);
     }
     else if (source.LookAhead(0) == '"')
     {
@@ -352,5 +351,66 @@ namespace Vypr
     }
 
     return {};
+  }
+
+  CLangToken CLangLexer::ParseCharacterConstant(Scanner &source)
+  {
+    CLangToken token{.type = CLangTokenType::CharacterConstant,
+                     .line = source.GetLine(),
+                     .column = source.GetColumn()};
+    source.Next();
+    if (source.LookAhead(0) == '\\')
+    {
+      source.Next();
+      token.content += ParseEscapeSequence(source);
+    }
+    else if (source.LookAhead(0) == '\'')
+    {
+      throw ParsingException(L"Expected '\'' to end character literal.",
+                             source.GetColumn(), source.GetLine());
+    }
+    else
+    {
+      token.content += source.Next();
+    }
+
+    if (source.LookAhead(0) != '\'')
+    {
+      throw ParsingException(L"Expected '\'' to end character literal.",
+                             source.GetColumn(), source.GetLine());
+    }
+    source.Next();
+
+    return token;
+  }
+
+  wchar_t CLangLexer::ParseEscapeSequence(Scanner &source)
+  {
+    static const std::unordered_map<wchar_t, wchar_t> EscapeTranslations = {
+        {'a', '\a'},  {'b', '\b'},  {'e', '\e'}, {'f', '\f'},
+        {'n', '\n'},  {'r', '\r'},  {'t', '\t'}, {'v', '\v'},
+        {'\\', '\\'}, {'\'', '\''}, {'"', '"'},  {'?', '\?'}};
+    if (EscapeTranslations.contains(source.LookAhead(0)))
+    {
+      return EscapeTranslations.at(source.Next());
+    }
+
+    if (source.LookAhead(0) == 'x')
+    {
+      return stoi(source.NextWhile([](wchar_t c) { return iswxdigit(c) != 0; }),
+                  nullptr, 16);
+    }
+    else if (source.LookAhead(0) == 'u' || source.LookAhead(0) == 'U')
+    {
+      return ParseUniversalCharacter(source)[0];
+    }
+    else if (isdigit(source.LookAhead(0)))
+    {
+      return stoi(source.NextWhile([](wchar_t c) { return isdigit(c) != 0; }),
+                  nullptr, 8);
+    }
+
+    throw ParsingException(L"Unknown escape sequence " + source.LookAhead(0, 1),
+                           source.GetColumn(), source.GetLine());
   }
 } // namespace Vypr
