@@ -16,6 +16,8 @@ namespace Vypr
     /// </summary>
     Scanner();
 
+    virtual ~Scanner() = default;
+
     /// <summary>
     /// Builds a string from the scanner while <c>condition</c> holds true or
     /// there is no more characters in the source.
