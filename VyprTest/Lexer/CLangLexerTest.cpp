@@ -517,4 +517,37 @@ namespace CLangLexerTest
     EXPECT_EQ(token.line, 4);
     EXPECT_EQ(token.content, L"int");
   }
+
+  TEST(GetToken, ManyTokens)
+  {
+    Vypr::CLangLexer lexer;
+    std::unique_ptr<Vypr::Scanner> testStream =
+        std::make_unique<Vypr::StringScanner>(
+            L"hi 33.2f \nint i = 0;/* \nHello \n*/\nint");
+
+    std::vector<std::tuple<Vypr::CLangTokenType, size_t, size_t>> tokens;
+    while (!testStream->Finished())
+    {
+      Vypr::CLangToken token = lexer.GetToken(*testStream);
+      tokens.push_back({token.type, token.column, token.line});
+    }
+
+    std::vector<std::tuple<Vypr::CLangTokenType, size_t, size_t>> groundTruth =
+        {{Vypr::CLangTokenType::Identifier, 1, 1},
+         {Vypr::CLangTokenType::FloatConstant, 4, 1},
+         {Vypr::CLangTokenType::IntegerType, 1, 2},
+         {Vypr::CLangTokenType::Identifier, 5, 2},
+         {Vypr::CLangTokenType::Assign, 7, 2},
+         {Vypr::CLangTokenType::IntegerConstant, 9, 2},
+         {Vypr::CLangTokenType::StatementDelimiter, 10, 2},
+         {Vypr::CLangTokenType::IntegerType, 1, 5}};
+
+    ASSERT_EQ(tokens.size(), groundTruth.size());
+    for (int i = 0; i < tokens.size(); i++)
+    {
+      auto &[type, col, line] = tokens[i];
+      auto &[ttype, tcol, tline] = groundTruth[i];
+      ASSERT_EQ(type, ttype);
+    }
+  }
 } // namespace CLangLexerTest
