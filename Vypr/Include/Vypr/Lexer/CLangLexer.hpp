@@ -171,5 +171,14 @@ namespace Vypr
     /// Character derived from the escape sequence.
     /// </returns>
     wchar_t ParseEscapeSequence(Scanner &source);
+
+    /// <summary>
+    /// Parse a string literal.
+    /// </summary>
+    /// <param name="source">Stream of wchar_t.</param>
+    /// <returns>
+    /// String literal sans the quotation.
+    /// </returns>
+    CLangToken ParseStringLiteral(Scanner &source);
   };
 } // namespace Vypr

@@ -433,4 +433,32 @@ namespace CLangLexerTest
   TEST_GET_TOKEN_CHAR_CONSTANT(HexMarkCharacter, L"'\x65'", L"e");
   TEST_GET_TOKEN_CHAR_CONSTANT(Unicode16MarkCharacter, L"'\u0065'", L"e");
   TEST_GET_TOKEN_CHAR_CONSTANT(Unicode32MarkCharacter, L"'\U00000065'", L"e");
+  TEST_GET_TOKEN_THROW(MissingTerminator, L"'a");
+  TEST_GET_TOKEN_THROW(MissingContent, L"''");
+  TEST_GET_TOKEN_THROW(TooMuchContent, L"'aa'");
+
+#define TEST_GET_TOKEN_STRING_CONSTANT(name, testStr, resultStr)               \
+  TEST(GetToken, StringLiteral##name)                                          \
+  {                                                                            \
+    Vypr::CLangLexer lexer;                                                    \
+    std::unique_ptr<Vypr::Scanner> testStream =                                \
+        std::make_unique<Vypr::StringScanner>(testStr);                        \
+                                                                               \
+    Vypr::CLangToken token = lexer.GetToken(*testStream);                      \
+    std::wstring remaining = testStream->NextWhile([](auto) { return true; }); \
+                                                                               \
+    EXPECT_EQ(token.type, Vypr::CLangTokenType::StringLiteral);                \
+    EXPECT_EQ(token.content, resultStr);                                       \
+    EXPECT_EQ(token.line, 1);                                                  \
+    EXPECT_EQ(token.column, 1);                                                \
+    EXPECT_EQ(remaining, L"");                                                 \
+  }
+
+  TEST_GET_TOKEN_STRING_CONSTANT(CommonString, L"\"helloworld\"",
+                                 L"helloworld");
+  TEST_GET_TOKEN_STRING_CONSTANT(NewLineString, L"\"hello\\nworld\"",
+                                 L"hello\nworld");
+  TEST_GET_TOKEN_STRING_CONSTANT(EmptyString, L"\"\"", L"");
+  TEST_GET_TOKEN_THROW(MissingTerminatorStringLiteral, L"\"a");
+  TEST_GET_TOKEN_THROW(NewlineInStringLiteral, L"\"a\n\"");
 } // namespace CLangLexerTest

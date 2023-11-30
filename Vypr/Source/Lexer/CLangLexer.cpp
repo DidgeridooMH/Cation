@@ -38,7 +38,7 @@ namespace Vypr
     }
     else if (source.LookAhead(0) == '"')
     {
-      // TODO
+      return ParseStringLiteral(source);
     }
     else
     {
@@ -412,5 +412,33 @@ namespace Vypr
 
     throw ParsingException(L"Unknown escape sequence " + source.LookAhead(0, 1),
                            source.GetColumn(), source.GetLine());
+  }
+
+  CLangToken CLangLexer::ParseStringLiteral(Scanner &source)
+  {
+    CLangToken token{.type = CLangTokenType::StringLiteral,
+                     .line = source.GetLine(),
+                     .column = source.GetColumn()};
+    source.Next();
+    while (!source.Finished() && source.LookAhead(0) != '\n' &&
+           source.LookAhead(0) != '"')
+    {
+      if (source.LookAhead(0) == '\\')
+      {
+        source.Next();
+        token.content += ParseEscapeSequence(source);
+      }
+      else
+      {
+        token.content += source.Next();
+      }
+    }
+    if (source.LookAhead(0) != '"')
+    {
+      throw ParsingException(L"Expected \" at the end of string literal.",
+                             source.GetColumn(), source.GetLine());
+    }
+    source.Next();
+    return token;
   }
 } // namespace Vypr
