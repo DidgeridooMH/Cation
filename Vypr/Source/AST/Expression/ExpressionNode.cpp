@@ -45,6 +45,8 @@ namespace Vypr
       case CLangTokenType::Identifier:
         // TODO: Variable node.
         break;
+      default:
+        break;
       }
     }
 
