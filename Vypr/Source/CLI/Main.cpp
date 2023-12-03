@@ -1,25 +1,21 @@
+#include <codecvt>
 #include <iostream>
+#include <locale>
 #include <string>
 
+#include "Vypr/AST/Expression/ExpressionNode.hpp"
 #include "Vypr/Lexer/CLangLexer.hpp"
-#include "Vypr/Lexer/CLangToken.hpp"
 #include "Vypr/Scanner/StringScanner.hpp"
 
 int main(int, char **)
 {
-  std::unique_ptr<Vypr::Scanner> source =
-      std::make_unique<Vypr::StringScanner>(L"(}hi)");
-  Vypr::CLangLexer lexer;
+  Vypr::CLangLexer lexer(
+      std::make_unique<Vypr::StringScanner>(L"3 && 1 + 23 * 2 | 2 % 2"));
 
-  Vypr::CLangToken token = lexer.GetToken(*source);
-  while (token.type != Vypr::CLangTokenType::NoToken)
-  {
-    std::wcout << "[" << token.line << "," << token.column << "] "
-               << (int)token.type << " - " << token.content << "\n";
+  auto expression = Vypr::ExpressionNode::Parse(lexer);
+  std::wstring result = expression->PrettyPrint(0);
 
-    token = lexer.GetToken(*source);
-  }
-  std::wcout << std::endl;
+  std::wcout << result << std::endl;
 
   return 0;
 }

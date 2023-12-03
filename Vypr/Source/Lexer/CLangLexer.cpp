@@ -13,79 +13,103 @@ namespace Vypr
   {
   }
 
-  CLangToken CLangLexer::GetToken(Scanner &source)
+  CLangLexer::CLangLexer(std::unique_ptr<Scanner> scanner)
+      : m_scanner(std::move(scanner))
   {
-    while (!source.Finished())
-    {
-      source.NextWhile(reinterpret_cast<bool (*)(wchar_t)>(iswspace));
+  }
 
-      if (source.LookAhead(0, 2) == L"//")
+  CLangToken CLangLexer::GetToken()
+  {
+    if (m_lookAheadBuffer.has_value())
+    {
+      CLangToken token = *m_lookAheadBuffer;
+      m_lookAheadBuffer = {};
+      return token;
+    }
+
+    while (!m_scanner->Finished())
+    {
+      m_scanner->NextWhile(reinterpret_cast<bool (*)(wchar_t)>(iswspace));
+
+      if (m_scanner->LookAhead(0, 2) == L"//")
       {
-        source.NextWhile([](wchar_t c) { return c != '\n'; });
+        m_scanner->NextWhile([](wchar_t c) { return c != '\n'; });
       }
-      else if (source.LookAhead(0, 2) == L"/*")
+      else if (m_scanner->LookAhead(0, 2) == L"/*")
       {
-        source.Next(2);
-        while (!source.Finished() && source.LookAhead(0, 2) != L"*/")
+        m_scanner->Next(2);
+        while (!m_scanner->Finished() && m_scanner->LookAhead(0, 2) != L"*/")
         {
-          source.Next();
+          m_scanner->Next();
         }
-        source.Next(2);
+        m_scanner->Next(2);
       }
-      else if (iswdigit(source.LookAhead(0)) ||
-               (source.LookAhead(0) == '.' && iswdigit(source.LookAhead(1))))
+      else if (iswdigit(m_scanner->LookAhead(0)) ||
+               (m_scanner->LookAhead(0) == '.' &&
+                iswdigit(m_scanner->LookAhead(1))))
       {
-        return ParseNumericalConstant(source);
+        return ParseNumericalConstant();
       }
-      else if (PunctuatorMap.contains(source.LookAhead(0, 1)))
+      else if (PunctuatorMap.contains(m_scanner->LookAhead(0, 1)))
       {
-        return ParsePunctuator(source);
+        return ParsePunctuator();
       }
-      else if (source.LookAhead(0) == '\'')
+      else if (m_scanner->LookAhead(0) == '\'')
       {
-        return ParseCharacterConstant(source);
+        return ParseCharacterConstant();
       }
-      else if (source.LookAhead(0) == '"')
+      else if (m_scanner->LookAhead(0) == '"')
       {
-        return ParseStringLiteral(source);
+        return ParseStringLiteral();
       }
-      else if (!source.Finished())
+      else if (!m_scanner->Finished())
       {
-        return ParseIdentifier(source);
+        return ParseIdentifier();
       }
     }
 
     return {};
   }
 
-  CLangToken CLangLexer::ParsePunctuator(Scanner &source)
+  CLangToken CLangLexer::PeekToken()
   {
-    CLangToken token = {.line = source.GetLine(), .column = source.GetColumn()};
+    if (!m_lookAheadBuffer.has_value())
+    {
+      m_lookAheadBuffer = GetToken();
+    }
+    return *m_lookAheadBuffer;
+  }
+
+  CLangToken CLangLexer::ParsePunctuator()
+  {
+    CLangToken token = {.line = m_scanner->GetLine(),
+                        .column = m_scanner->GetColumn()};
     do
     {
-      token.content += source.Next();
-    } while (!source.Finished() &&
-                 PunctuatorMap.contains(token.content + source.LookAhead(0)) ||
-             PunctuatorMap.contains(token.content + source.LookAhead(0, 2)));
+      token.content += m_scanner->Next();
+    } while (
+        !m_scanner->Finished() &&
+            PunctuatorMap.contains(token.content + m_scanner->LookAhead(0)) ||
+        PunctuatorMap.contains(token.content + m_scanner->LookAhead(0, 2)));
     token.type = PunctuatorMap.at(token.content);
     return token;
   }
 
-  CLangToken CLangLexer::ParseIdentifier(Scanner &source)
+  CLangToken CLangLexer::ParseIdentifier()
   {
     CLangToken token = {.type = CLangTokenType::Identifier,
-                        .line = source.GetLine(),
-                        .column = source.GetColumn()};
-    while (!source.Finished() &&
-           !PunctuatorMap.contains(source.LookAhead(0, 1)) &&
-           source.LookAhead(0) != '"' && source.LookAhead(0) != '\'' &&
-           !iswspace(source.LookAhead(0)))
+                        .line = m_scanner->GetLine(),
+                        .column = m_scanner->GetColumn()};
+    while (!m_scanner->Finished() &&
+           !PunctuatorMap.contains(m_scanner->LookAhead(0, 1)) &&
+           m_scanner->LookAhead(0) != '"' && m_scanner->LookAhead(0) != '\'' &&
+           !iswspace(m_scanner->LookAhead(0)))
     {
-      token.content += source.Next();
+      token.content += m_scanner->Next();
       if (token.content.back() == '\\')
       {
         token.content.pop_back();
-        std::wstring uChar = ParseUniversalCharacter(source);
+        std::wstring uChar = ParseUniversalCharacter();
         if (uChar.empty())
         {
           throw ParsingException(L"Malformatted universal character",
@@ -103,20 +127,20 @@ namespace Vypr
     return token;
   }
 
-  std::wstring CLangLexer::ParseUniversalCharacter(Scanner &source)
+  std::wstring CLangLexer::ParseUniversalCharacter()
   {
     constexpr size_t Utf16CodeSize = 4;
     constexpr size_t Utf32CodeSize = 8;
 
-    if (source.Finished() ||
-        (source.LookAhead(0) != 'U' && source.LookAhead(0) != 'u'))
+    if (m_scanner->Finished() ||
+        (m_scanner->LookAhead(0) != 'U' && m_scanner->LookAhead(0) != 'u'))
     {
       return L"";
     }
 
-    size_t codeSize = source.Next() == 'u' ? Utf16CodeSize : Utf32CodeSize;
+    size_t codeSize = m_scanner->Next() == 'u' ? Utf16CodeSize : Utf32CodeSize;
 
-    std::wstring unicodeCharacter = source.Next(codeSize);
+    std::wstring unicodeCharacter = m_scanner->Next(codeSize);
     if (unicodeCharacter.length() != codeSize)
     {
       return L"";
@@ -150,25 +174,27 @@ namespace Vypr
     return buffer;
   }
 
-  CLangToken CLangLexer::ParseNumericalConstant(Scanner &source)
+  CLangToken CLangLexer::ParseNumericalConstant()
   {
     CLangToken token = {.type = CLangTokenType::IntegerConstant,
-                        .line = source.GetLine(),
-                        .column = source.GetColumn()};
+                        .line = m_scanner->GetLine(),
+                        .column = m_scanner->GetColumn()};
 
-    if (source.LookAhead(0, 2) == L"0b" || source.LookAhead(0, 2) == L"0B")
+    if (m_scanner->LookAhead(0, 2) == L"0b" ||
+        m_scanner->LookAhead(0, 2) == L"0B")
     {
-      token.content += source.Next();
-      token.content += towlower(source.Next());
-      token.content += ParseBinaryConstant(source);
+      token.content += m_scanner->Next();
+      token.content += towlower(m_scanner->Next());
+      token.content += ParseBinaryConstant();
     }
-    else if (source.LookAhead(0, 2) == L"0x" || source.LookAhead(0, 2) == L"0X")
+    else if (m_scanner->LookAhead(0, 2) == L"0x" ||
+             m_scanner->LookAhead(0, 2) == L"0X")
     {
-      token.content += source.Next();
-      token.content += towlower(source.Next());
+      token.content += m_scanner->Next();
+      token.content += towlower(m_scanner->Next());
 
       const auto &[isFloatingPoint, content] = ParseFloatableConstant(
-          source, &CLangLexer::ParseHexadecimalSequence, 'p', true);
+          &CLangLexer::ParseHexadecimalSequence, 'p', true);
       token.content += content;
       if (isFloatingPoint)
       {
@@ -177,8 +203,8 @@ namespace Vypr
     }
     else
     {
-      const auto &[isFloatingPoint, content] = ParseFloatableConstant(
-          source, &CLangLexer::ParseIntegerSequence, 'e', false);
+      const auto &[isFloatingPoint, content] =
+          ParseFloatableConstant(&CLangLexer::ParseIntegerSequence, 'e', false);
       token.content += content;
       if (isFloatingPoint)
       {
@@ -188,59 +214,59 @@ namespace Vypr
 
     if (token.type == CLangTokenType::IntegerConstant)
     {
-      token.content += ParseIntegerSuffix(source);
+      token.content += ParseIntegerSuffix();
     }
     else
     {
-      token.content += ParseFloatSuffix(source);
+      token.content += ParseFloatSuffix();
     }
 
     return token;
   }
 
-  std::wstring CLangLexer::ParseBinaryConstant(Scanner &source)
+  std::wstring CLangLexer::ParseBinaryConstant()
   {
     std::wstring buffer;
-    while (iswdigit(source.LookAhead(0)))
+    while (iswdigit(m_scanner->LookAhead(0)))
     {
-      buffer += source.Next();
+      buffer += m_scanner->Next();
       if (buffer.back() != '0' && buffer.back() != '1')
       {
         throw ParsingException(buffer + L" is not a valid binary number.",
-                               source.GetColumn(), source.GetLine());
+                               m_scanner->GetColumn(), m_scanner->GetLine());
       }
     }
 
     if (buffer.empty())
     {
-      throw ParsingException(L"Expected binary number.", source.GetColumn(),
-                             source.GetLine());
+      throw ParsingException(L"Expected binary number.", m_scanner->GetColumn(),
+                             m_scanner->GetLine());
     }
 
     return buffer;
   }
 
   std::tuple<bool, std::wstring> CLangLexer::ParseFloatableConstant(
-      Scanner &source, std::wstring (CLangLexer::*parser)(Scanner &),
-      char exponentDelimiter, bool requireExponent)
+      std::wstring (CLangLexer::*parser)(), char exponentDelimiter,
+      bool requireExponent)
   {
     std::wstring buffer;
     bool isFloatingPoint = false;
 
-    if (source.LookAhead(0) != '.')
+    if (m_scanner->LookAhead(0) != '.')
     {
-      buffer += (this->*parser)(source);
+      buffer += (this->*parser)();
     }
 
-    if (source.LookAhead(0) == '.')
+    if (m_scanner->LookAhead(0) == '.')
     {
       isFloatingPoint = true;
 
-      buffer += source.Next();
+      buffer += m_scanner->Next();
 
       try
       {
-        buffer += (this->*parser)(source);
+        buffer += (this->*parser)();
       }
       catch (const ParsingException &e)
       {
@@ -251,76 +277,76 @@ namespace Vypr
       }
     }
 
-    if (towlower(source.LookAhead(0)) == exponentDelimiter)
+    if (towlower(m_scanner->LookAhead(0)) == exponentDelimiter)
     {
-      buffer += towlower(source.Next());
+      buffer += towlower(m_scanner->Next());
 
-      if (source.LookAhead(0) == '-' || source.LookAhead(0) == '+')
+      if (m_scanner->LookAhead(0) == '-' || m_scanner->LookAhead(0) == '+')
       {
-        buffer += source.Next();
+        buffer += m_scanner->Next();
       }
 
-      buffer += ParseIntegerSequence(source);
+      buffer += ParseIntegerSequence();
     }
     else if (isFloatingPoint && requireExponent)
     {
-      throw ParsingException(L"Invalid numerical constant.", source.GetColumn(),
-                             source.GetLine());
+      throw ParsingException(L"Invalid numerical constant.",
+                             m_scanner->GetColumn(), m_scanner->GetLine());
     }
 
     return {isFloatingPoint, buffer};
   }
 
-  std::wstring CLangLexer::ParseHexadecimalSequence(Scanner &source)
+  std::wstring CLangLexer::ParseHexadecimalSequence()
   {
     std::wstring buffer;
-    while (iswxdigit(source.LookAhead(0)))
+    while (iswxdigit(m_scanner->LookAhead(0)))
     {
-      buffer += towlower(source.Next());
+      buffer += towlower(m_scanner->Next());
     }
 
     if (buffer.empty())
     {
       throw ParsingException(L"Expected hexadecimal number.",
-                             source.GetColumn(), source.GetLine());
+                             m_scanner->GetColumn(), m_scanner->GetLine());
     }
 
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseIntegerSequence(Scanner &source)
+  std::wstring CLangLexer::ParseIntegerSequence()
   {
     std::wstring buffer;
-    while (iswdigit(source.LookAhead(0)))
+    while (iswdigit(m_scanner->LookAhead(0)))
     {
-      buffer += source.Next();
+      buffer += m_scanner->Next();
     }
 
     if (buffer.empty())
     {
-      throw ParsingException(L"Expected decimal number.", source.GetColumn(),
-                             source.GetLine());
+      throw ParsingException(L"Expected decimal number.",
+                             m_scanner->GetColumn(), m_scanner->GetLine());
     }
 
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseIntegerSuffix(Scanner &source)
+  std::wstring CLangLexer::ParseIntegerSuffix()
   {
     std::wstring buffer;
     bool signUsed = false;
     bool sizeUsed = false;
-    while (iswalpha(source.LookAhead(0)))
+    while (iswalpha(m_scanner->LookAhead(0)))
     {
-      buffer += towlower(source.Next());
+      buffer += towlower(m_scanner->Next());
 
       if (buffer.back() == 'u')
       {
         if (signUsed)
         {
           throw ParsingException(L"Invalid suffix for integer constant " +
-                                     source.LookAhead(0, 1),
-                                 source.GetColumn(), source.GetLine());
+                                     m_scanner->LookAhead(0, 1),
+                                 m_scanner->GetColumn(), m_scanner->GetLine());
         }
         signUsed = true;
       }
@@ -329,124 +355,127 @@ namespace Vypr
         if (sizeUsed && buffer[buffer.size() - 2] != 'l')
         {
           throw ParsingException(L"Invalid suffix for integer constant " +
-                                     source.LookAhead(0, 1),
-                                 source.GetColumn(), source.GetLine());
+                                     m_scanner->LookAhead(0, 1),
+                                 m_scanner->GetColumn(), m_scanner->GetLine());
         }
         sizeUsed = true;
       }
       else
       {
         throw ParsingException(L"Invalid suffix for integer constant " +
-                                   source.LookAhead(0, 1),
-                               source.GetColumn(), source.GetLine());
+                                   m_scanner->LookAhead(0, 1),
+                               m_scanner->GetColumn(), m_scanner->GetLine());
       }
     }
     return buffer;
   }
 
-  std::wstring CLangLexer::ParseFloatSuffix(Scanner &source)
+  std::wstring CLangLexer::ParseFloatSuffix()
   {
-    if (towlower(source.LookAhead(0)) == 'l' ||
-        towlower(source.LookAhead(0)) == 'f')
+    if (towlower(m_scanner->LookAhead(0)) == 'l' ||
+        towlower(m_scanner->LookAhead(0)) == 'f')
     {
-      return std::wstring{static_cast<wchar_t>(towlower(source.Next()))};
+      return std::wstring{static_cast<wchar_t>(towlower(m_scanner->Next()))};
     }
-    else if (iswalpha(source.LookAhead(0)))
+    else if (iswalpha(m_scanner->LookAhead(0)))
     {
       throw ParsingException(L"Invalid suffix for floating point constant " +
-                                 source.LookAhead(0, 1),
-                             source.GetColumn(), source.GetLine());
+                                 m_scanner->LookAhead(0, 1),
+                             m_scanner->GetColumn(), m_scanner->GetLine());
     }
 
     return {};
   }
 
-  CLangToken CLangLexer::ParseCharacterConstant(Scanner &source)
+  CLangToken CLangLexer::ParseCharacterConstant()
   {
     CLangToken token{.type = CLangTokenType::CharacterConstant,
-                     .line = source.GetLine(),
-                     .column = source.GetColumn()};
-    source.Next();
-    if (source.LookAhead(0) == '\\')
+                     .line = m_scanner->GetLine(),
+                     .column = m_scanner->GetColumn()};
+    m_scanner->Next();
+    if (m_scanner->LookAhead(0) == '\\')
     {
-      source.Next();
-      token.content += ParseEscapeSequence(source);
+      m_scanner->Next();
+      token.content += ParseEscapeSequence();
     }
-    else if (source.LookAhead(0) == '\'')
+    else if (m_scanner->LookAhead(0) == '\'')
     {
       throw ParsingException(L"Expected '\'' to end character literal.",
-                             source.GetColumn(), source.GetLine());
+                             m_scanner->GetColumn(), m_scanner->GetLine());
     }
     else
     {
-      token.content += source.Next();
+      token.content += m_scanner->Next();
     }
 
-    if (source.LookAhead(0) != '\'')
+    if (m_scanner->LookAhead(0) != '\'')
     {
       throw ParsingException(L"Expected '\'' to end character literal.",
-                             source.GetColumn(), source.GetLine());
+                             m_scanner->GetColumn(), m_scanner->GetLine());
     }
-    source.Next();
+    m_scanner->Next();
 
     return token;
   }
 
-  wchar_t CLangLexer::ParseEscapeSequence(Scanner &source)
+  wchar_t CLangLexer::ParseEscapeSequence()
   {
     static const std::unordered_map<wchar_t, wchar_t> EscapeTranslations = {
         {'a', '\a'},  {'b', '\b'},  {'e', '\e'}, {'f', '\f'},
         {'n', '\n'},  {'r', '\r'},  {'t', '\t'}, {'v', '\v'},
         {'\\', '\\'}, {'\'', '\''}, {'"', '"'},  {'?', '\?'}};
-    if (EscapeTranslations.contains(source.LookAhead(0)))
+    if (EscapeTranslations.contains(m_scanner->LookAhead(0)))
     {
-      return EscapeTranslations.at(source.Next());
+      return EscapeTranslations.at(m_scanner->Next());
     }
 
-    if (source.LookAhead(0) == 'x')
+    if (m_scanner->LookAhead(0) == 'x')
     {
-      return stoi(source.NextWhile([](wchar_t c) { return iswxdigit(c) != 0; }),
-                  nullptr, 16);
+      return stoi(
+          m_scanner->NextWhile([](wchar_t c) { return iswxdigit(c) != 0; }),
+          nullptr, 16);
     }
-    else if (source.LookAhead(0) == 'u' || source.LookAhead(0) == 'U')
+    else if (m_scanner->LookAhead(0) == 'u' || m_scanner->LookAhead(0) == 'U')
     {
-      return ParseUniversalCharacter(source)[0];
+      return ParseUniversalCharacter()[0];
     }
-    else if (isdigit(source.LookAhead(0)))
+    else if (isdigit(m_scanner->LookAhead(0)))
     {
-      return stoi(source.NextWhile([](wchar_t c) { return isdigit(c) != 0; }),
-                  nullptr, 8);
+      return stoi(
+          m_scanner->NextWhile([](wchar_t c) { return isdigit(c) != 0; }),
+          nullptr, 8);
     }
 
-    throw ParsingException(L"Unknown escape sequence " + source.LookAhead(0, 1),
-                           source.GetColumn(), source.GetLine());
+    throw ParsingException(L"Unknown escape sequence " +
+                               m_scanner->LookAhead(0, 1),
+                           m_scanner->GetColumn(), m_scanner->GetLine());
   }
 
-  CLangToken CLangLexer::ParseStringLiteral(Scanner &source)
+  CLangToken CLangLexer::ParseStringLiteral()
   {
     CLangToken token{.type = CLangTokenType::StringLiteral,
-                     .line = source.GetLine(),
-                     .column = source.GetColumn()};
-    source.Next();
-    while (!source.Finished() && source.LookAhead(0) != '\n' &&
-           source.LookAhead(0) != '"')
+                     .line = m_scanner->GetLine(),
+                     .column = m_scanner->GetColumn()};
+    m_scanner->Next();
+    while (!m_scanner->Finished() && m_scanner->LookAhead(0) != '\n' &&
+           m_scanner->LookAhead(0) != '"')
     {
-      if (source.LookAhead(0) == '\\')
+      if (m_scanner->LookAhead(0) == '\\')
       {
-        source.Next();
-        token.content += ParseEscapeSequence(source);
+        m_scanner->Next();
+        token.content += ParseEscapeSequence();
       }
       else
       {
-        token.content += source.Next();
+        token.content += m_scanner->Next();
       }
     }
-    if (source.LookAhead(0) != '"')
+    if (m_scanner->LookAhead(0) != '"')
     {
       throw ParsingException(L"Expected \" at the end of string literal.",
-                             source.GetColumn(), source.GetLine());
+                             m_scanner->GetColumn(), m_scanner->GetLine());
     }
-    source.Next();
+    m_scanner->Next();
     return token;
   }
 } // namespace Vypr

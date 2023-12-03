@@ -1,11 +1,22 @@
 set(LIBVYPR_SOURCE
+  "Source/AST/UnknownTokenException.cpp"
+  "Source/AST/Expression/ValueType.cpp"
+  "Source/AST/Expression/ConstantNode.cpp"
+  "Source/AST/Expression/ExpressionNode.cpp"
+  "Source/AST/Expression/BinaryOpNode.cpp"
   "Source/Lexer/CLangKeywords.cpp"
   "Source/Lexer/CLangLexer.cpp"
   "Source/Lexer/CLangPunctuators.cpp"
   "Source/Scanner/Scanner.cpp"
- "Source/Scanner/StringScanner.cpp")
+  "Source/Scanner/StringScanner.cpp"
+)
 
 set(LIBVYPR_HEADER
+  "Include/Vypr/AST/UnknownTokenException.hpp"
+  "Include/Vypr/AST/Expression/ValueType.hpp"
+  "Include/Vypr/AST/Expression/ConstantNode.hpp"
+  "Include/Vypr/AST/Expression/ExpressionNode.hpp"
+  "Include/Vypr/AST/Expression/BinaryOpNode.hpp"
   "Include/Vypr/Lexer/CLangLexer.hpp"
   "Include/Vypr/Lexer/CLangToken.hpp"
   "Include/Vypr/Lexer/CLangTokenMap.hpp"

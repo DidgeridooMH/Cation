@@ -1,6 +1,8 @@
 #pragma once
 
 #include <exception>
+#include <memory>
+#include <optional>
 #include <string>
 
 #include "Vypr/Lexer/CLangToken.hpp"
@@ -31,7 +33,6 @@ namespace Vypr
     size_t line;
   };
 
-  // TODO: This holds no state and might be better off being a namespace.
   /// <summary>
   /// C language lexer. Parses a raw file or string stream into tokens dfiend
   /// in the C language grammar. Only metadata about a stream is held by the
@@ -40,6 +41,8 @@ namespace Vypr
   class CLangLexer
   {
   public:
+    CLangLexer(std::unique_ptr<Scanner> scanner);
+
     /// <summary>
     /// Fetch a token from the front of the stream. Whitespace is ignored and
     /// tokens are not parsed across vertical whitespace.
@@ -50,7 +53,20 @@ namespace Vypr
     /// <c>CLangToken::NoToken</c> when EOF is reached or a token
     /// couldn't be parsed.
     /// </returns>
-    CLangToken GetToken(Scanner &source);
+    CLangToken GetToken();
+
+    // TODO: TEST
+    /// <summary>
+    /// Peek a token from the front of the stream. Whitespace is ignored and
+    /// tokens are not parsed across vertical whitespace.
+    /// </summary>
+    /// <param name="source">Stream to peek token from.</param>
+    /// <returns>
+    /// A <c>CLangToken</c> parsed from the stream. Token is of type
+    /// <c>CLangToken::NoToken</c> when EOF is reached or a token
+    /// couldn't be parsed.
+    /// </returns>
+    CLangToken PeekToken();
 
   private:
     /// <summary>
@@ -58,14 +74,14 @@ namespace Vypr
     /// </summary>
     /// <param name="source">Stream of wchar_t.</param>
     /// <returns>Token of the punctuator.</returns>
-    CLangToken ParsePunctuator(Scanner &source);
+    CLangToken ParsePunctuator();
 
     /// <summary>
     /// Parses an identifier or keyword from source.
     /// </summary>
     /// <param name="source">Stream of wchar_t.</param>
     /// <returns>Token of the keyword or identifier.</returns>
-    CLangToken ParseIdentifier(Scanner &source);
+    CLangToken ParseIdentifier();
 
     /// <summary>
     /// Parses a unicode character from source. Front of source should be either
@@ -75,7 +91,7 @@ namespace Vypr
     /// <returns>
     /// String containing the unicode character.
     /// </returns>
-    std::wstring ParseUniversalCharacter(Scanner &source);
+    std::wstring ParseUniversalCharacter();
 
     /// <summary>
     /// Parses a numerical constant from source.
@@ -84,7 +100,7 @@ namespace Vypr
     /// <returns>
     /// Token containing either a float constant or integer constant.
     /// </returns>
-    CLangToken ParseNumericalConstant(Scanner &source);
+    CLangToken ParseNumericalConstant();
 
     /// <summary>
     /// Parses and convert a binary number from source.
@@ -96,7 +112,7 @@ namespace Vypr
     /// <exception cref="ParsingException">
     /// Thrown when a binary number contains values other than 0 and 1.
     /// </exception>
-    std::wstring ParseBinaryConstant(Scanner &source);
+    std::wstring ParseBinaryConstant();
 
     /// <summary>
     /// Parses a number with a integral part, an optional fraction part, and
@@ -109,8 +125,8 @@ namespace Vypr
     /// floating point.</param> <returns>True if floating point and a integer or
     /// floating point string.</returns>
     std::tuple<bool, std::wstring> ParseFloatableConstant(
-        Scanner &source, std::wstring (CLangLexer::*parser)(Scanner &),
-        char exponentDelimiter, bool requireExponent);
+        std::wstring (CLangLexer::*parser)(), char exponentDelimiter,
+        bool requireExponent);
 
     /// <summary>
     /// Parses a hexadecimal number from source.
@@ -122,7 +138,7 @@ namespace Vypr
     /// <exception cref="ParsingException">
     /// Thrown when a hexadecimal number contains values other [0-9a-zA-Z].
     /// </exception>
-    std::wstring ParseHexadecimalSequence(Scanner &source);
+    std::wstring ParseHexadecimalSequence();
 
     /// <summary>
     /// Parses integer from source.
@@ -134,7 +150,7 @@ namespace Vypr
     /// <exception cref="ParsingException">
     /// Thrown if sequence not found.
     /// </exception>
-    std::wstring ParseIntegerSequence(Scanner &source);
+    std::wstring ParseIntegerSequence();
 
     /// <summary>
     /// Parses an integer suffix of u, U, l, L, ll, LL.
@@ -143,7 +159,7 @@ namespace Vypr
     /// <returns>
     /// Integer suffix or empty string if one is not available.
     /// </returns>
-    std::wstring ParseIntegerSuffix(Scanner &source);
+    std::wstring ParseIntegerSuffix();
 
     /// <summary>
     /// Parses an float suffix of f, F, l, L.
@@ -152,7 +168,7 @@ namespace Vypr
     /// <returns>
     /// Float suffix or empty string if one is not available.
     /// </returns>
-    std::wstring ParseFloatSuffix(Scanner &source);
+    std::wstring ParseFloatSuffix();
 
     /// <summary>
     /// Parses a character literal
@@ -161,7 +177,7 @@ namespace Vypr
     /// <returns>
     /// Character literal sans the quotation.
     /// </returns>
-    CLangToken ParseCharacterConstant(Scanner &source);
+    CLangToken ParseCharacterConstant();
 
     /// <summary>
     /// Parse an escape sequence.
@@ -170,7 +186,7 @@ namespace Vypr
     /// <returns>
     /// Character derived from the escape sequence.
     /// </returns>
-    wchar_t ParseEscapeSequence(Scanner &source);
+    wchar_t ParseEscapeSequence();
 
     /// <summary>
     /// Parse a string literal.
@@ -179,6 +195,9 @@ namespace Vypr
     /// <returns>
     /// String literal sans the quotation.
     /// </returns>
-    CLangToken ParseStringLiteral(Scanner &source);
+    CLangToken ParseStringLiteral();
+
+    std::unique_ptr<Scanner> m_scanner;
+    std::optional<CLangToken> m_lookAheadBuffer;
   };
 } // namespace Vypr
