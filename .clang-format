@@ -3,7 +3,6 @@ IndentWidth: 2
 Language: Cpp
 ColumnLimit: 80
 NamespaceIndentation: All
-BreakAfterAttributes: Always
 IncludeBlocks: Regroup
 IncludeCategories:
   - Regex:           '<.*>'
