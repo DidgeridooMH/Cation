@@ -5,6 +5,11 @@
 
 #include "Vypr/AST/UnknownTokenException.hpp"
 
+template <class... Ts> struct overloaded : Ts...
+{
+  using Ts::operator()...;
+};
+
 namespace Vypr
 {
   ConstantNode::ConstantNode(ValueType type, ConstantValue value)
@@ -15,7 +20,16 @@ namespace Vypr
   std::wstring ConstantNode::PrettyPrint(int level) const
   {
     std::wstring result = ExpressionNode::PrettyPrint(level);
-    result += L"Constant\n";
+    result += L"Constant(";
+    std::visit(
+        overloaded{
+            [&](auto arg) { result += std::to_wstring(arg); },
+            [&](const std::string &arg) {
+              std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+              result += L"\"" + converter.from_bytes(arg) + L"\"";
+            }},
+        m_value);
+    result += L")\n";
     return result;
   }
 
@@ -153,7 +167,7 @@ namespace Vypr
     std::string stringLiteral = converter.to_bytes(token.content);
     return std::make_unique<ConstantNode>(
         ValueType{.constant = true,
-                  .indirection = 1,
+                  .indirection = {false},
                   .type = PrimitiveValueType::Byte},
         stringLiteral);
   }
