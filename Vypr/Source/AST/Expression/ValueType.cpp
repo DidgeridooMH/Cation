@@ -21,8 +21,6 @@ namespace Vypr
 
   std::wstring ValueType::PrettyPrint() const
   {
-    const int *const *i = nullptr;
-
     std::wstring result = L"<";
     if (constant)
     {
