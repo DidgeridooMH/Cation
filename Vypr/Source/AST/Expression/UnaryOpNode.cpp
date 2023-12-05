@@ -23,10 +23,71 @@ namespace Vypr
       {UnaryOp::Sizeof, L"Sizeof"}};
 
   UnaryOpNode::UnaryOpNode(UnaryOp op,
-                           std::unique_ptr<ExpressionNode> expression,
-                           ValueType type)
-      : ExpressionNode(type), m_op(op), m_expression(std::move(expression))
+                           std::unique_ptr<ExpressionNode> expression)
+      : m_op(op), m_expression(std::move(expression))
   {
+    switch (op)
+    {
+    case UnaryOp::Increment:
+    case UnaryOp::Decrement:
+      if (!m_expression->type.IsModifiable())
+      {
+        throw TypeException("Value must be modifiable.");
+      }
+    case UnaryOp::Negate:
+      if (m_expression->type.metaType != ValueMetaType::Primitive &&
+          m_expression->type.indirection.size() == 0)
+      {
+        throw TypeException("Value must be integral.");
+      }
+      type = m_expression->type;
+      type.constant = false;
+      type.lvalue = false;
+      break;
+    case UnaryOp::LogicalNot:
+      if (m_expression->type.metaType != ValueMetaType::Primitive ||
+          m_expression->type.indirection.size() == 0)
+      {
+        throw TypeException("Value must be integral.");
+      }
+      type = ValueType{.metaType = ValueMetaType::Primitive,
+                       .lvalue = false,
+                       .constant = false,
+                       .info = PrimitiveType::Int};
+      break;
+    case UnaryOp::Not:
+      if (m_expression->type.indirection.size() > 0 ||
+          m_expression->type.metaType != ValueMetaType::Primitive ||
+          (std::get<PrimitiveType>(m_expression->type.info) ==
+               PrimitiveType::Float ||
+           std::get<PrimitiveType>(m_expression->type.info) ==
+               PrimitiveType::Double))
+      {
+        throw TypeException("Value must be integral.");
+      }
+      type = m_expression->type;
+      type.constant = false;
+      type.lvalue = false;
+      break;
+    case UnaryOp::Deref:
+      if (m_expression->type.indirection.size() == 0)
+      {
+        throw TypeException("Value must be a pointer.");
+      }
+      type = m_expression->type;
+      type.indirection.pop_back();
+      break;
+    case UnaryOp::AddressOf:
+      type = m_expression->type;
+      type.indirection.push_back(false);
+      break;
+    case UnaryOp::Sizeof:
+      type = ValueType{.metaType = ValueMetaType::Primitive,
+                       .lvalue = false,
+                       .constant = false,
+                       .info = PrimitiveType::ULong};
+      break;
+    }
   }
 
   std::wstring UnaryOpNode::PrettyPrint(int level) const
@@ -45,9 +106,6 @@ namespace Vypr
     std::unique_ptr<ExpressionNode> expression =
         ExpressionNode::Parse(lexer, 1);
 
-    // TODO: Implement casting.
-
-    return std::make_unique<UnaryOpNode>(op, std::move(expression),
-                                         expression->m_type);
+    return std::make_unique<UnaryOpNode>(op, std::move(expression));
   }
 } // namespace Vypr

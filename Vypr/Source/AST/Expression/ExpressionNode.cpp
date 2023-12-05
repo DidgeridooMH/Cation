@@ -7,7 +7,7 @@
 
 namespace Vypr
 {
-  ExpressionNode::ExpressionNode(ValueType type) : m_type(type)
+  ExpressionNode::ExpressionNode(ValueType type) : type(type)
   {
   }
 
@@ -18,7 +18,7 @@ namespace Vypr
     {
       result += L"  ";
     }
-    result += L"|> " + m_type.PrettyPrint() + L" ";
+    result += L"|> " + type.PrettyPrint() + L" ";
     return result;
   }
 
@@ -62,13 +62,13 @@ namespace Vypr
       {
         lexer.GetToken();
         base = std::make_unique<PostfixOpNode>(PostfixOp::Increment,
-                                               std::move(base), base->m_type);
+                                               std::move(base), base->type);
       }
       else if (nextToken.type == CLangTokenType::Decrement)
       {
         lexer.GetToken();
         base = std::make_unique<PostfixOpNode>(PostfixOp::Decrement,
-                                               std::move(base), base->m_type);
+                                               std::move(base), base->type);
       }
       else
       {

@@ -7,7 +7,6 @@
 
 namespace Vypr
 {
-  // TODO: type cast
   enum class UnaryOp
   {
     Increment,
@@ -23,8 +22,7 @@ namespace Vypr
   class UnaryOpNode : public ExpressionNode
   {
   public:
-    UnaryOpNode(UnaryOp op, std::unique_ptr<ExpressionNode> expression,
-                ValueType type);
+    UnaryOpNode(UnaryOp op, std::unique_ptr<ExpressionNode> expression);
 
     std::wstring PrettyPrint(int level) const override;
 
