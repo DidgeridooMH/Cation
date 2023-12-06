@@ -34,7 +34,9 @@ set(VYPR_SOURCE
 )
 
 add_library(libvypr ${LIBVYPR_SOURCE} ${LIBVYPR_HEADER})
+if (NOT MSVC)
 target_compile_options(libvypr PRIVATE "-Wno-deprecated")
+endif ()
 target_include_directories(libvypr PUBLIC Include/)
 
 add_executable(vypr ${VYPR_SOURCE})

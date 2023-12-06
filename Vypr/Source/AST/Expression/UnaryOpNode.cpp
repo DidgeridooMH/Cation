@@ -23,69 +23,60 @@ namespace Vypr
       {UnaryOp::Sizeof, L"Sizeof"}};
 
   UnaryOpNode::UnaryOpNode(UnaryOp op,
-                           std::unique_ptr<ExpressionNode> expression)
+                           std::unique_ptr<ExpressionNode> expression,
+                           size_t column, size_t line)
       : m_op(op), m_expression(std::move(expression))
   {
+    column = column;
+    line = line;
+
     switch (op)
     {
     case UnaryOp::Increment:
     case UnaryOp::Decrement:
       if (!m_expression->type.IsModifiable())
       {
-        throw TypeException("Value must be modifiable.");
+        throw TypeException("Value must be modifiable.", column, line);
       }
+      [[fallthrough]];
     case UnaryOp::Negate:
-      if (m_expression->type.metaType != ValueMetaType::Primitive &&
-          m_expression->type.indirection.size() == 0)
+      if (!m_expression->type.IsPrimitive() || m_expression->type.IsPointer())
       {
-        throw TypeException("Value must be integral.");
+        throw TypeException("Value must be integral.", column, line);
       }
       type = m_expression->type;
       type.constant = false;
       type.lvalue = false;
       break;
     case UnaryOp::LogicalNot:
-      if (m_expression->type.metaType != ValueMetaType::Primitive ||
-          m_expression->type.indirection.size() == 0)
-      {
-        throw TypeException("Value must be integral.");
-      }
-      type = ValueType{.metaType = ValueMetaType::Primitive,
-                       .lvalue = false,
-                       .constant = false,
-                       .info = PrimitiveType::Int};
+      type = ValueType{.storage = PrimitiveType::Int};
       break;
     case UnaryOp::Not:
-      if (m_expression->type.indirection.size() > 0 ||
-          m_expression->type.metaType != ValueMetaType::Primitive ||
-          (std::get<PrimitiveType>(m_expression->type.info) ==
-               PrimitiveType::Float ||
-           std::get<PrimitiveType>(m_expression->type.info) ==
-               PrimitiveType::Double))
+      if (m_expression->type.IsPointer() || !m_expression->type.IsIntegral())
       {
-        throw TypeException("Value must be integral.");
+        throw TypeException("Value must be integral.", column, line);
       }
       type = m_expression->type;
       type.constant = false;
       type.lvalue = false;
       break;
     case UnaryOp::Deref:
-      if (m_expression->type.indirection.size() == 0)
+      if (!m_expression->type.IsPointer())
       {
-        throw TypeException("Value must be a pointer.");
+        throw TypeException("Value must be a pointer.", column, line);
       }
       type = m_expression->type;
       type.indirection.pop_back();
       break;
     case UnaryOp::AddressOf:
       type = m_expression->type;
-      type.indirection.push_back(false);
+      if (!m_expression->type.IsFunctionPointer())
+      {
+        type.indirection.push_back(false);
+      }
       break;
     case UnaryOp::Sizeof:
-      type = ValueType{.metaType = ValueMetaType::Primitive,
-                       .lvalue = false,
-                       .constant = false,
-                       .info = PrimitiveType::ULong};
+      type = ValueType{.storage = PrimitiveType::ULong};
       break;
     }
   }
@@ -106,6 +97,7 @@ namespace Vypr
     std::unique_ptr<ExpressionNode> expression =
         ExpressionNode::Parse(lexer, 1);
 
-    return std::make_unique<UnaryOpNode>(op, std::move(expression));
+    return std::make_unique<UnaryOpNode>(op, std::move(expression),
+                                         opToken.column, opToken.line);
   }
 } // namespace Vypr

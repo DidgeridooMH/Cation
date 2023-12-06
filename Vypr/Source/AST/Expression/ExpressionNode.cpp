@@ -7,7 +7,13 @@
 
 namespace Vypr
 {
-  ExpressionNode::ExpressionNode(ValueType type) : type(type)
+
+  ExpressionNode::ExpressionNode() : column(0), line(0)
+  {
+  }
+
+  ExpressionNode::ExpressionNode(ValueType type, size_t column, size_t line)
+      : type(type), column(column), line(line)
   {
   }
 
@@ -61,14 +67,16 @@ namespace Vypr
       if (nextToken.type == CLangTokenType::Increment)
       {
         lexer.GetToken();
-        base = std::make_unique<PostfixOpNode>(PostfixOp::Increment,
-                                               std::move(base), base->type);
+        base = std::make_unique<PostfixOpNode>(
+            PostfixOp::Increment, std::move(base), base->type, nextToken.column,
+            nextToken.line);
       }
       else if (nextToken.type == CLangTokenType::Decrement)
       {
         lexer.GetToken();
-        base = std::make_unique<PostfixOpNode>(PostfixOp::Decrement,
-                                               std::move(base), base->type);
+        base = std::make_unique<PostfixOpNode>(
+            PostfixOp::Decrement, std::move(base), base->type, nextToken.column,
+            nextToken.line);
       }
       else
       {

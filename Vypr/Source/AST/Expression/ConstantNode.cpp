@@ -16,8 +16,9 @@ template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 namespace Vypr
 {
-  ConstantNode::ConstantNode(ValueType type, ConstantValue value)
-      : ExpressionNode(type), m_value(value)
+  ConstantNode::ConstantNode(ValueType type, ConstantValue value, size_t column,
+                             size_t line)
+      : ExpressionNode(type, column, line), m_value(value)
   {
   }
 
@@ -49,10 +50,11 @@ namespace Vypr
     case CLangTokenType::CharacterConstant:
       return std::make_unique<ConstantNode>(
           ValueType{
-              .type = PrimitiveValueType::Byte,
+              .storage = PrimitiveType::Byte,
           },
           (uint8_t)std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>()
-              .to_bytes(nextToken.content)[0]);
+              .to_bytes(nextToken.content)[0],
+          nextToken.column, nextToken.line);
       break;
     case CLangTokenType::StringLiteral:
       return ParseStringLiteral(nextToken);
@@ -104,14 +106,16 @@ namespace Vypr
       if (longCount < 2)
       {
         return std::make_unique<ConstantNode>(
-            ValueType{.type = PrimitiveValueType::UInt},
-            (uint32_t)std::stoul(constant, nullptr, radix));
+            ValueType{.storage = PrimitiveType::UInt},
+            (uint32_t)std::stoul(constant, nullptr, radix), token.column,
+            token.line);
       }
       else
       {
         return std::make_unique<ConstantNode>(
-            ValueType{.type = PrimitiveValueType::ULong},
-            (uint64_t)std::stoull(constant, nullptr, radix));
+            ValueType{.storage = PrimitiveType::ULong},
+            (uint64_t)std::stoull(constant, nullptr, radix), token.column,
+            token.line);
       }
     }
     else
@@ -119,14 +123,16 @@ namespace Vypr
       if (longCount < 2)
       {
         return std::make_unique<ConstantNode>(
-            ValueType{.type = PrimitiveValueType::Int},
-            (int32_t)std::stol(constant, nullptr, radix));
+            ValueType{.storage = PrimitiveType::Int},
+            (int32_t)std::stol(constant, nullptr, radix), token.column,
+            token.line);
       }
       else
       {
         return std::make_unique<ConstantNode>(
-            ValueType{.type = PrimitiveValueType::Long},
-            (int64_t)std::stoll(constant, nullptr, radix));
+            ValueType{.storage = PrimitiveType::Long},
+            (int64_t)std::stoll(constant, nullptr, radix), token.column,
+            token.line);
       }
     }
   }
@@ -134,15 +140,16 @@ namespace Vypr
   std::unique_ptr<ConstantNode> ConstantNode::ParseFloatConstant(
       const CLangToken &token)
   {
-    bool isDouble = false;
+    bool isDouble = true;
 
     int postfix = 0;
     auto iter = token.content.crbegin();
-    while (iter != token.content.crend() && *iter == 'f' && *iter == 'l')
+    while (iter != token.content.crend() && (*iter == 'f' || *iter == 'l'))
     {
-      if (*iter == 'l')
+      // TODO: Add long double type
+      if (*iter == 'f')
       {
-        isDouble = true;
+        isDouble = false;
       }
       postfix += 1;
       iter++;
@@ -153,14 +160,14 @@ namespace Vypr
     if (isDouble)
     {
       return std::make_unique<ConstantNode>(
-          ValueType{.type = PrimitiveValueType::Double},
-          std::stof(constant, nullptr));
+          ValueType{.storage = PrimitiveType::Double},
+          std::stof(constant, nullptr), token.column, token.line);
     }
     else
     {
       return std::make_unique<ConstantNode>(
-          ValueType{.type = PrimitiveValueType::Float},
-          std::stod(constant, nullptr));
+          ValueType{.storage = PrimitiveType::Float},
+          std::stod(constant, nullptr), token.column, token.line);
     }
   }
 
@@ -172,7 +179,7 @@ namespace Vypr
     return std::make_unique<ConstantNode>(
         ValueType{.constant = true,
                   .indirection = {false},
-                  .type = PrimitiveValueType::Byte},
-        stringLiteral);
+                  .storage = PrimitiveType::Byte},
+        stringLiteral, token.column, token.line);
   }
 } // namespace Vypr

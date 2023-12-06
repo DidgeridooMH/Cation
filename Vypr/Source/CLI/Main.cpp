@@ -8,12 +8,18 @@
 int main(int, char **)
 {
   Vypr::CLangLexer lexer(
-      std::make_unique<Vypr::StringScanner>(L"3 << ++1 + ~23 * 2 | 2 % 2++"));
+      std::make_unique<Vypr::StringScanner>(L"4 + 3.0 - 2.0f / 1 && 1"));
 
-  auto expression = Vypr::ExpressionNode::Parse(lexer);
-  std::wstring result = expression->PrettyPrint(0);
-
-  std::wcout << result << std::endl;
+  try
+  {
+    auto expression = Vypr::ExpressionNode::Parse(lexer);
+    std::wcout << expression->PrettyPrint(0) << std::endl;
+  }
+  catch (Vypr::TypeException &e)
+  {
+    std::wcerr << e.what() << " [" << e.column << "," << e.line << "]"
+               << std::endl;
+  }
 
   return 0;
 }

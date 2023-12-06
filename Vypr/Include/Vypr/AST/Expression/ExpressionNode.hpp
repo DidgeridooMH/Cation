@@ -8,9 +8,9 @@ namespace Vypr
   class ExpressionNode
   {
   public:
-    ExpressionNode() = default;
+    ExpressionNode();
 
-    ExpressionNode(ValueType type);
+    ExpressionNode(ValueType type, size_t column, size_t line);
 
     static std::unique_ptr<ExpressionNode> Parse(CLangLexer &lexer,
                                                  int precedenceLevel = 15);
@@ -18,5 +18,7 @@ namespace Vypr
     virtual std::wstring PrettyPrint(int level) const;
 
     ValueType type;
+    size_t column;
+    size_t line;
   };
 } // namespace Vypr

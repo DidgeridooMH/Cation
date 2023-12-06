@@ -1,5 +1,7 @@
 #include "Vypr/AST/Expression/BinaryOpNode.hpp"
 
+#include "Vypr/AST/Expression/CastNode.hpp"
+
 namespace Vypr
 {
   const std::unordered_map<CLangTokenType, BinaryOp> BinaryOperations = {
@@ -54,11 +56,96 @@ namespace Vypr
       {BinaryOp::LogicalOr, L"LogicalOr"}};
 
   BinaryOpNode::BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> lhs,
-                             std::unique_ptr<ExpressionNode> rhs,
-                             ValueType type)
-      : ExpressionNode(type), m_op(op), m_lhs(std::move(lhs)),
-        m_rhs(std::move(rhs))
+                             std::unique_ptr<ExpressionNode> rhs, size_t column,
+                             size_t line)
+      : ExpressionNode(lhs->type, column, line), m_op(op),
+        m_lhs(std::move(lhs)), m_rhs(std::move(rhs))
   {
+    if ((!m_lhs->type.IsPrimitive() && !m_lhs->type.IsPointer()) ||
+        (!m_rhs->type.IsPrimitive() && !m_rhs->type.IsPointer()))
+    {
+      throw TypeException("Operands must be pointer, real, or integral types.",
+                          column, line);
+    }
+
+    switch (op)
+    {
+    case BinaryOp::Modulo:
+    case BinaryOp::ShiftLeft:
+    case BinaryOp::ShiftRight:
+    case BinaryOp::And:
+    case BinaryOp::Xor:
+    case BinaryOp::Or:
+      if (!m_lhs->type.IsIntegral() || !m_rhs->type.IsIntegral() ||
+          m_lhs->type.IsPointer() || m_rhs->type.IsPointer())
+      {
+        throw TypeException("Operands must be integral.", column, line);
+      }
+      CastType();
+      break;
+    case BinaryOp::Multiply:
+    case BinaryOp::Divide:
+      if (m_lhs->type.IsPointer() || m_rhs->type.IsPointer())
+      {
+        throw TypeException("Operands must be integral.", column, line);
+      }
+      CastType();
+      break;
+    case BinaryOp::Add:
+    case BinaryOp::Subtract:
+      if ((m_lhs->type.IsPointer() && m_rhs->type.IsPointer()) ||
+          (m_lhs->type.IsPointer() && m_rhs->type.IsReal()) ||
+          (m_lhs->type.IsReal() && m_rhs->type.IsPointer()))
+      {
+        throw TypeException("Operands must be real or integral and pointer.",
+                            column, line);
+      }
+      CastType();
+      break;
+    case BinaryOp::LogicalAnd:
+    case BinaryOp::LogicalOr:
+    case BinaryOp::LessThan:
+    case BinaryOp::LessEqual:
+    case BinaryOp::GreaterThan:
+    case BinaryOp::GreaterEqual:
+    case BinaryOp::Equal:
+    case BinaryOp::NotEqual:
+      if ((m_lhs->type.IsPointer() && m_rhs->type.IsReal()) ||
+          (m_lhs->type.IsReal() && m_rhs->type.IsPointer()))
+      {
+        throw TypeException("Operands must be real or integral and pointer.",
+                            column, line);
+      }
+      type = ValueType{.storage = PrimitiveType::Int};
+      break;
+    }
+
+    type.lvalue = false;
+  }
+
+  void BinaryOpNode::CastType()
+  {
+    if ((m_lhs->type.IsPointer() && m_rhs->type.IsPointer()) ||
+        (m_lhs->type.IsPointer() && m_rhs->type.IsPrimitive()))
+    {
+      type = m_lhs->type;
+    }
+    else if (m_lhs->type.IsPrimitive() && m_rhs->type.IsPointer())
+    {
+      type = m_rhs->type;
+    }
+    else if (std::get<PrimitiveType>(m_lhs->type.storage) <
+             std::get<PrimitiveType>(m_rhs->type.storage))
+    {
+      m_lhs = std::make_unique<CastNode>(m_rhs->type, std::move(m_lhs));
+      type = m_lhs->type;
+    }
+    else if (std::get<PrimitiveType>(m_lhs->type.storage) >
+             std::get<PrimitiveType>(m_rhs->type.storage))
+    {
+      m_rhs = std::make_unique<CastNode>(m_lhs->type, std::move(m_rhs));
+      type = m_rhs->type;
+    }
   }
 
   std::wstring BinaryOpNode::PrettyPrint(int level) const
@@ -79,9 +166,7 @@ namespace Vypr
     std::unique_ptr<ExpressionNode> rhs =
         ExpressionNode::Parse(lexer, BinaryOperationPrecedence.at(op));
 
-    // TODO: Implement casting.
-
     return std::make_unique<BinaryOpNode>(op, std::move(base), std::move(rhs),
-                                          base->m_type);
+                                          opToken.column, opToken.line);
   }
 } // namespace Vypr

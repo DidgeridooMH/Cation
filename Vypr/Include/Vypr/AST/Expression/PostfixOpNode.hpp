@@ -16,7 +16,7 @@ namespace Vypr
   {
   public:
     PostfixOpNode(PostfixOp op, std::unique_ptr<ExpressionNode> expression,
-                  ValueType type);
+                  ValueType type, size_t column, size_t line);
 
     std::wstring PrettyPrint(int level) const override;
 

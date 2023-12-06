@@ -5,19 +5,13 @@
 namespace Vypr
 {
 
-  static const std::unordered_map<PrimitiveValueType, std::wstring>
-      ValueTypeName = {{PrimitiveValueType::Void, L"Void"},
-                       {PrimitiveValueType::Byte, L"Byte"},
-                       {PrimitiveValueType::Short, L"Short"},
-                       {PrimitiveValueType::Int, L"Int"},
-                       {PrimitiveValueType::Long, L"Long"},
-                       {PrimitiveValueType::UByte, L"UByte"},
-                       {PrimitiveValueType::UShort, L"UShort"},
-                       {PrimitiveValueType::UInt, L"UInt"},
-                       {PrimitiveValueType::ULong, L"ULong"},
-                       {PrimitiveValueType::Float, L"Float"},
-                       {PrimitiveValueType::Double, L"Double"},
-                       {PrimitiveValueType::Struct, L"Struct"}};
+  static const std::unordered_map<PrimitiveType, std::wstring>
+      PrimitiveTypeNames = {
+          {PrimitiveType::Byte, L"Byte"},   {PrimitiveType::Short, L"Short"},
+          {PrimitiveType::Int, L"Int"},     {PrimitiveType::Long, L"Long"},
+          {PrimitiveType::UByte, L"UByte"}, {PrimitiveType::UShort, L"UShort"},
+          {PrimitiveType::UInt, L"UInt"},   {PrimitiveType::ULong, L"ULong"},
+          {PrimitiveType::Float, L"Float"}, {PrimitiveType::Double, L"Double"}};
 
   std::wstring ValueType::PrettyPrint() const
   {
@@ -27,18 +21,30 @@ namespace Vypr
       result += L"const ";
     }
 
-    result += ValueTypeName.at(type);
+    if (std::holds_alternative<PrimitiveType>(storage))
+    {
+      result += PrimitiveTypeNames.at(std::get<PrimitiveType>(storage));
+    }
+    else if (std::holds_alternative<UserDefinedType>(storage))
+    {
+      result += std::get<UserDefinedType>(storage);
+    }
+    else if (std::holds_alternative<FunctionType>(storage))
+    {
+      result += L"FunctionPtr";
+    }
+    else
+    {
+      result += L"void";
+    }
 
     for (bool isConstantPointer : indirection)
     {
-      if (result.back() == L'*')
+      if (result.back() != L'*')
       {
-        result += L"*";
+        result += L" ";
       }
-      else
-      {
-        result += L" *";
-      }
+      result += L"*";
 
       if (isConstantPointer)
       {

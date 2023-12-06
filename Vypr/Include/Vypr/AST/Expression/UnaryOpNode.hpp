@@ -22,7 +22,8 @@ namespace Vypr
   class UnaryOpNode : public ExpressionNode
   {
   public:
-    UnaryOpNode(UnaryOp op, std::unique_ptr<ExpressionNode> expression);
+    UnaryOpNode(UnaryOp op, std::unique_ptr<ExpressionNode> expression,
+                size_t column, size_t line);
 
     std::wstring PrettyPrint(int level) const override;
 

@@ -33,7 +33,8 @@ namespace Vypr
   {
   public:
     BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> lhs,
-                 std::unique_ptr<ExpressionNode> rhs, ValueType type);
+                 std::unique_ptr<ExpressionNode> rhs, size_t column,
+                 size_t line);
 
     std::wstring PrettyPrint(int level) const override;
 
@@ -41,6 +42,8 @@ namespace Vypr
         std::unique_ptr<ExpressionNode> base, CLangLexer &lexer);
 
   private:
+    void CastType();
+
     BinaryOp m_op;
     std::unique_ptr<ExpressionNode> m_lhs;
     std::unique_ptr<ExpressionNode> m_rhs;
