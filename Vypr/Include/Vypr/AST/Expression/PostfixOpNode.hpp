@@ -3,20 +3,15 @@
 #include <memory>
 
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
+#include "Vypr/AST/Expression/PostfixOp.hpp"
 
 namespace Vypr
 {
-  enum class PostfixOp
-  {
-    Increment,
-    Decrement
-  };
-
   class PostfixOpNode : public ExpressionNode
   {
   public:
-    PostfixOpNode(PostfixOp op, std::unique_ptr<ExpressionNode> expression,
-                  ValueType type, size_t column, size_t line);
+    PostfixOpNode(PostfixOp op, std::unique_ptr<ExpressionNode> &expression,
+                  size_t column, size_t line);
 
     std::wstring PrettyPrint(int level) const override;
 

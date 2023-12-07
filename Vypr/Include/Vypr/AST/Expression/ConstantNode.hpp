@@ -15,8 +15,8 @@ namespace Vypr
 
   struct ConstantNode : public ExpressionNode
   {
-    ConstantNode(ValueType type, ConstantValue value, size_t column,
-                 size_t line);
+    ConstantNode(std::unique_ptr<StorageType> &type, ConstantValue value,
+                 size_t column, size_t line);
 
     std::wstring PrettyPrint(int level) const override;
 

@@ -1,5 +1,9 @@
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
 
+#include "Vypr/AST/Expression/CastNode.hpp"
+#include "Vypr/AST/Type/IntegralType.hpp"
+#include "Vypr/AST/Type/TypeException.hpp"
+
 namespace Vypr
 {
   const std::unordered_map<CLangTokenType, UnaryOp> UnaryOperations = {
@@ -23,61 +27,26 @@ namespace Vypr
       {UnaryOp::Sizeof, L"Sizeof"}};
 
   UnaryOpNode::UnaryOpNode(UnaryOp op,
-                           std::unique_ptr<ExpressionNode> expression,
+                           std::unique_ptr<ExpressionNode> &expression,
                            size_t column, size_t line)
-      : m_op(op), m_expression(std::move(expression))
+      : ExpressionNode(nullptr, column, line), m_op(op),
+        m_expression(std::move(expression))
   {
-    column = column;
-    line = line;
-
-    switch (op)
+    type = m_expression->type->Check(op);
+    if (type == nullptr)
     {
-    case UnaryOp::Increment:
-    case UnaryOp::Decrement:
-      if (!m_expression->type.IsModifiable())
-      {
-        throw TypeException("Value must be modifiable.", column, line);
-      }
-      [[fallthrough]];
-    case UnaryOp::Negate:
-      if (!m_expression->type.IsPrimitive() || m_expression->type.IsPointer())
-      {
-        throw TypeException("Value must be integral.", column, line);
-      }
-      type = m_expression->type;
-      type.constant = false;
-      type.lvalue = false;
-      break;
-    case UnaryOp::LogicalNot:
-      type = ValueType{.storage = PrimitiveType::Int};
-      break;
-    case UnaryOp::Not:
-      if (m_expression->type.IsPointer() || !m_expression->type.IsIntegral())
-      {
-        throw TypeException("Value must be integral.", column, line);
-      }
-      type = m_expression->type;
-      type.constant = false;
-      type.lvalue = false;
-      break;
-    case UnaryOp::Deref:
-      if (!m_expression->type.IsPointer())
-      {
-        throw TypeException("Value must be a pointer.", column, line);
-      }
-      type = m_expression->type;
-      type.indirection.pop_back();
-      break;
-    case UnaryOp::AddressOf:
-      type = m_expression->type;
-      if (!m_expression->type.IsFunctionPointer())
-      {
-        type.indirection.push_back(false);
-      }
-      break;
-    case UnaryOp::Sizeof:
-      type = ValueType{.storage = PrimitiveType::ULong};
-      break;
+      throw TypeException("Invalid operands", column, line);
+    }
+
+    if (op == UnaryOp::LogicalNot &&
+            m_expression->type->GetType() != StorageMetaType::Integral ||
+        dynamic_cast<IntegralType *>(m_expression->type.get())->integral !=
+            Integral::Bool)
+
+    {
+      std::unique_ptr<StorageType> castType =
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+      m_expression = std::make_unique<CastNode>(castType, m_expression);
     }
   }
 
@@ -97,7 +66,7 @@ namespace Vypr
     std::unique_ptr<ExpressionNode> expression =
         ExpressionNode::Parse(lexer, 1);
 
-    return std::make_unique<UnaryOpNode>(op, std::move(expression),
-                                         opToken.column, opToken.line);
+    return std::make_unique<UnaryOpNode>(op, expression, opToken.column,
+                                         opToken.line);
   }
 } // namespace Vypr

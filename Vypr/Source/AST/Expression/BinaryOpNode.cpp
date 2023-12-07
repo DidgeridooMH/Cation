@@ -1,6 +1,9 @@
 #include "Vypr/AST/Expression/BinaryOpNode.hpp"
 
 #include "Vypr/AST/Expression/CastNode.hpp"
+#include "Vypr/AST/Type/IntegralType.hpp"
+#include "Vypr/AST/Type/TypeException.hpp"
+#include "Vypr/AST/UnexpectedTokenException.hpp"
 
 namespace Vypr
 {
@@ -55,97 +58,106 @@ namespace Vypr
       {BinaryOp::LogicalAnd, L"LogicalAnd"},
       {BinaryOp::LogicalOr, L"LogicalOr"}};
 
-  BinaryOpNode::BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> lhs,
-                             std::unique_ptr<ExpressionNode> rhs, size_t column,
-                             size_t line)
-      : ExpressionNode(lhs->type, column, line), m_op(op),
-        m_lhs(std::move(lhs)), m_rhs(std::move(rhs))
+  BinaryOpNode::BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> &lhs,
+                             std::unique_ptr<ExpressionNode> &rhs,
+                             size_t column, size_t line)
+      : ExpressionNode(nullptr, column, line), m_op(op), m_lhs(std::move(lhs)),
+        m_rhs(std::move(rhs))
   {
-    if ((!m_lhs->type.IsPrimitive() && !m_lhs->type.IsPointer()) ||
-        (!m_rhs->type.IsPrimitive() && !m_rhs->type.IsPointer()))
+    type = m_lhs->type->Check(op, m_rhs->type.get());
+    if (type == nullptr)
     {
-      throw TypeException("Operands must be pointer, real, or integral types.",
-                          column, line);
+      throw TypeException("Invalid operands", column, line);
     }
+    CastType();
+  }
 
-    switch (op)
+  void BinaryOpNode::CastType()
+  {
+    switch (m_op)
     {
+    case BinaryOp::Add:
+    case BinaryOp::Subtract:
+    case BinaryOp::Multiply:
+    case BinaryOp::Divide:
     case BinaryOp::Modulo:
-    case BinaryOp::ShiftLeft:
-    case BinaryOp::ShiftRight:
+      CastTypeArithmetic(m_op);
+      break;
     case BinaryOp::And:
     case BinaryOp::Xor:
     case BinaryOp::Or:
-      if (!m_lhs->type.IsIntegral() || !m_rhs->type.IsIntegral() ||
-          m_lhs->type.IsPointer() || m_rhs->type.IsPointer())
-      {
-        throw TypeException("Operands must be integral.", column, line);
-      }
-      CastType();
+      CastTypeBitwise(m_op);
       break;
-    case BinaryOp::Multiply:
-    case BinaryOp::Divide:
-      if (m_lhs->type.IsPointer() || m_rhs->type.IsPointer())
-      {
-        throw TypeException("Operands must be integral.", column, line);
-      }
-      CastType();
-      break;
-    case BinaryOp::Add:
-    case BinaryOp::Subtract:
-      if ((m_lhs->type.IsPointer() && m_rhs->type.IsPointer()) ||
-          (m_lhs->type.IsPointer() && m_rhs->type.IsReal()) ||
-          (m_lhs->type.IsReal() && m_rhs->type.IsPointer()))
-      {
-        throw TypeException("Operands must be real or integral and pointer.",
-                            column, line);
-      }
-      CastType();
-      break;
-    case BinaryOp::LogicalAnd:
-    case BinaryOp::LogicalOr:
     case BinaryOp::LessThan:
     case BinaryOp::LessEqual:
     case BinaryOp::GreaterThan:
     case BinaryOp::GreaterEqual:
     case BinaryOp::Equal:
     case BinaryOp::NotEqual:
-      if ((m_lhs->type.IsPointer() && m_rhs->type.IsReal()) ||
-          (m_lhs->type.IsReal() && m_rhs->type.IsPointer()))
-      {
-        throw TypeException("Operands must be real or integral and pointer.",
-                            column, line);
-      }
-      type = ValueType{.storage = PrimitiveType::Int};
+      CastTypeComparison(m_op);
+      break;
+    case BinaryOp::LogicalAnd:
+    case BinaryOp::LogicalOr:
+      CastTypeLogic(m_op);
+      break;
+    default:
       break;
     }
-
-    type.lvalue = false;
   }
 
-  void BinaryOpNode::CastType()
+  void BinaryOpNode::CastTypeIntegral()
   {
-    if ((m_lhs->type.IsPointer() && m_rhs->type.IsPointer()) ||
-        (m_lhs->type.IsPointer() && m_rhs->type.IsPrimitive()))
+    IntegralType *exprType = dynamic_cast<IntegralType *>(type.get());
+    IntegralType *lhs = dynamic_cast<IntegralType *>(m_lhs->type.get());
+    if (lhs->integral < exprType->integral ||
+        lhs->isUnsigned != exprType->isUnsigned)
     {
-      type = m_lhs->type;
+      std::unique_ptr<StorageType> castType = exprType->Clone();
+      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
     }
-    else if (m_lhs->type.IsPrimitive() && m_rhs->type.IsPointer())
+
+    IntegralType *rhs = dynamic_cast<IntegralType *>(m_rhs->type.get());
+    if (rhs->integral < exprType->integral ||
+        rhs->isUnsigned != exprType->isUnsigned)
     {
-      type = m_rhs->type;
+      std::unique_ptr<StorageType> castType = exprType->Clone();
+      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
     }
-    else if (std::get<PrimitiveType>(m_lhs->type.storage) <
-             std::get<PrimitiveType>(m_rhs->type.storage))
+  }
+
+  void BinaryOpNode::CastTypeArithmetic(BinaryOp op)
+  {
+    if (type->GetType() == StorageMetaType::Integral)
     {
-      m_lhs = std::make_unique<CastNode>(m_rhs->type, std::move(m_lhs));
-      type = m_lhs->type;
+      CastTypeIntegral();
     }
-    else if (std::get<PrimitiveType>(m_lhs->type.storage) >
-             std::get<PrimitiveType>(m_rhs->type.storage))
+  }
+
+  void BinaryOpNode::CastTypeBitwise(BinaryOp op)
+  {
+    if (type->GetType() == StorageMetaType::Integral)
     {
-      m_rhs = std::make_unique<CastNode>(m_lhs->type, std::move(m_rhs));
-      type = m_rhs->type;
+      CastTypeIntegral();
     }
+  }
+
+  void BinaryOpNode::CastTypeComparison(BinaryOp op)
+  {
+    if (type->GetType() == StorageMetaType::Integral)
+    {
+      CastTypeIntegral();
+    }
+  }
+
+  void BinaryOpNode::CastTypeLogic(BinaryOp op)
+  {
+    std::unique_ptr<StorageType> lhsType =
+        std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+    m_lhs = std::make_unique<CastNode>(lhsType, m_lhs);
+
+    std::unique_ptr<StorageType> rhsType =
+        std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+    m_rhs = std::make_unique<CastNode>(rhsType, m_rhs);
   }
 
   std::wstring BinaryOpNode::PrettyPrint(int level) const
@@ -158,15 +170,20 @@ namespace Vypr
   }
 
   std::unique_ptr<ExpressionNode> BinaryOpNode::Parse(
-      std::unique_ptr<ExpressionNode> base, CLangLexer &lexer)
+      std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer)
   {
     CLangToken opToken = lexer.GetToken();
     BinaryOp op = BinaryOperations.at(opToken.type);
 
     std::unique_ptr<ExpressionNode> rhs =
         ExpressionNode::Parse(lexer, BinaryOperationPrecedence.at(op));
+    if (rhs == nullptr)
+    {
+      throw UnexpectedTokenException("expression", opToken.column,
+                                     opToken.line);
+    }
 
-    return std::make_unique<BinaryOpNode>(op, std::move(base), std::move(rhs),
-                                          opToken.column, opToken.line);
+    return std::make_unique<BinaryOpNode>(op, base, rhs, opToken.column,
+                                          opToken.line);
   }
 } // namespace Vypr

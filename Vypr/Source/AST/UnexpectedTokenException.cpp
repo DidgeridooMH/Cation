@@ -1,4 +1,4 @@
-#include "Vypr/AST/UnknownTokenException.hpp"
+#include "Vypr/AST/UnexpectedTokenException.hpp"
 
 namespace Vypr
 {

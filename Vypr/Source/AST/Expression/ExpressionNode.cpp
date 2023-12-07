@@ -4,6 +4,7 @@
 #include "Vypr/AST/Expression/ConstantNode.hpp"
 #include "Vypr/AST/Expression/PostfixOpNode.hpp"
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
+#include "Vypr/AST/UnexpectedTokenException.hpp"
 
 namespace Vypr
 {
@@ -12,8 +13,9 @@ namespace Vypr
   {
   }
 
-  ExpressionNode::ExpressionNode(ValueType type, size_t column, size_t line)
-      : type(type), column(column), line(line)
+  ExpressionNode::ExpressionNode(std::unique_ptr<StorageType> &&type,
+                                 size_t column, size_t line)
+      : type(std::move(type)), column(column), line(line)
   {
   }
 
@@ -24,7 +26,7 @@ namespace Vypr
     {
       result += L"  ";
     }
-    result += L"|> " + type.PrettyPrint() + L" ";
+    result += L"|> <" + type->PrettyPrint() + L"> ";
     return result;
   }
 
@@ -42,6 +44,17 @@ namespace Vypr
     {
       switch (nextToken.type)
       {
+      case CLangTokenType::LeftParenthesis: {
+        lexer.GetToken();
+        base = ExpressionNode::Parse(lexer);
+        CLangToken groupClose = lexer.GetToken();
+        if (groupClose.type != CLangTokenType::RightParenthesis)
+        {
+          throw UnexpectedTokenException(")", groupClose.line,
+                                         groupClose.column);
+        }
+        break;
+      }
       case CLangTokenType::IntegerConstant:
       case CLangTokenType::FloatConstant:
       case CLangTokenType::CharacterConstant:
@@ -62,25 +75,29 @@ namespace Vypr
                                    BinaryOperations.at(nextToken.type))) ||
            ((nextToken.type == CLangTokenType::Increment ||
              nextToken.type == CLangTokenType::Decrement) &&
-            precedenceLevel >= 1))
+            precedenceLevel >= 1) ||
+           nextToken.type == CLangTokenType::LeftParenthesis ||
+           nextToken.type == CLangTokenType::RightParenthesis)
     {
       if (nextToken.type == CLangTokenType::Increment)
       {
         lexer.GetToken();
         base = std::make_unique<PostfixOpNode>(
-            PostfixOp::Increment, std::move(base), base->type, nextToken.column,
-            nextToken.line);
+            PostfixOp::Increment, base, nextToken.column, nextToken.line);
       }
       else if (nextToken.type == CLangTokenType::Decrement)
       {
         lexer.GetToken();
         base = std::make_unique<PostfixOpNode>(
-            PostfixOp::Decrement, std::move(base), base->type, nextToken.column,
-            nextToken.line);
+            PostfixOp::Decrement, base, nextToken.column, nextToken.line);
+      }
+      else if (nextToken.type == CLangTokenType::RightParenthesis)
+      {
+        break;
       }
       else
       {
-        base = BinaryOpNode::Parse(std::move(base), lexer);
+        base = BinaryOpNode::Parse(base, lexer);
       }
       nextToken = lexer.PeekToken();
     }

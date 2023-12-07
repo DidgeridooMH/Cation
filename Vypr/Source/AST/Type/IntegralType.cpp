@@ -1,0 +1,225 @@
+#include "Vypr/AST/Type/IntegralType.hpp"
+
+#include <unordered_map>
+
+namespace Vypr
+{
+  IntegralType::IntegralType(Integral integral, bool isUnsigned, bool isConst,
+                             bool isLValue)
+      : StorageType(StorageMetaType::Integral, isConst, isLValue),
+        integral(integral), isUnsigned(isUnsigned)
+  {
+  }
+
+  std::unique_ptr<StorageType> IntegralType::Clone() const
+  {
+    return std::make_unique<IntegralType>(integral, isUnsigned, false, false);
+  }
+
+  std::unique_ptr<StorageType> IntegralType::Check(PostfixOp op) const
+  {
+    std::unique_ptr<StorageType> resultType;
+    if (isLValue)
+    {
+      resultType = Clone();
+    }
+    return resultType;
+  }
+
+  std::unique_ptr<StorageType> IntegralType::Check(UnaryOp op) const
+  {
+    std::unique_ptr<StorageType> resultType;
+
+    switch (op)
+    {
+    case UnaryOp::Increment:
+    case UnaryOp::Decrement:
+      if (isLValue)
+      {
+        resultType = Clone();
+      }
+      break;
+    case UnaryOp::Not:
+    case UnaryOp::Negate:
+      if (integral == Integral::Bool)
+      {
+        resultType =
+            std::make_unique<IntegralType>(Integral::Int, false, false, false);
+      }
+      else
+      {
+        resultType = Clone();
+      }
+      break;
+    case UnaryOp::LogicalNot:
+      resultType =
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+      break;
+    case UnaryOp::Deref:
+      return nullptr;
+    case UnaryOp::AddressOf:
+      // TODO: Finish after doing pointers.
+      return nullptr;
+    case UnaryOp::Sizeof:
+      resultType =
+          std::make_unique<IntegralType>(Integral::Long, true, false, false);
+      break;
+    }
+
+    return resultType;
+  }
+
+  std::unique_ptr<StorageType> IntegralType::Check(
+      BinaryOp op, const StorageType *other) const
+  {
+    std::unique_ptr<StorageType> resultType;
+
+    switch (op)
+    {
+    case BinaryOp::Add:
+    case BinaryOp::Subtract:
+    case BinaryOp::Multiply:
+    case BinaryOp::Divide:
+    case BinaryOp::Modulo:
+      resultType = CheckArithmetic(op, other);
+      break;
+    case BinaryOp::ShiftLeft:
+    case BinaryOp::ShiftRight:
+    case BinaryOp::And:
+    case BinaryOp::Xor:
+    case BinaryOp::Or:
+      resultType = CheckBitwise(op, other);
+      break;
+    case BinaryOp::LessThan:
+    case BinaryOp::LessEqual:
+    case BinaryOp::GreaterThan:
+    case BinaryOp::GreaterEqual:
+    case BinaryOp::Equal:
+    case BinaryOp::NotEqual:
+      resultType = CheckComparison(op, other);
+      break;
+    case BinaryOp::LogicalAnd:
+    case BinaryOp::LogicalOr:
+      resultType = CheckLogic(op, other);
+      break;
+    }
+
+    if (resultType != nullptr)
+    {
+      resultType->isLValue = false;
+      resultType->isConst = false;
+    }
+
+    return resultType;
+  }
+
+  std::unique_ptr<StorageType> IntegralType::CheckArithmetic(
+      BinaryOp op, const StorageType *other) const
+  {
+    std::unique_ptr<StorageType> resultType = nullptr;
+
+    switch (other->GetType())
+    {
+    case StorageMetaType::Integral:
+      resultType =
+          integral >= dynamic_cast<const IntegralType *>(other)->integral
+              ? Clone()
+              : other->Clone();
+      dynamic_cast<IntegralType *>(resultType.get())->isUnsigned =
+          isUnsigned || dynamic_cast<const IntegralType *>(other)->isUnsigned;
+      break;
+    case StorageMetaType::Real:
+      if (op != BinaryOp::Modulo)
+      {
+        // TODO: Use real type
+      }
+      break;
+    case StorageMetaType::Pointer:
+      if (op != BinaryOp::Add)
+      {
+        // TODO: Use pointer type
+      }
+      break;
+    case StorageMetaType::Array:
+      if (op != BinaryOp::Add)
+      {
+        // TODO: Convert to pointer type.
+      }
+      break;
+    default:
+      break;
+    }
+
+    return resultType;
+  }
+
+  std::unique_ptr<StorageType> IntegralType::CheckBitwise(
+      BinaryOp op, const StorageType *other) const
+  {
+    if (other->GetType() != StorageMetaType::Integral)
+    {
+      return nullptr;
+    }
+
+    std::unique_ptr<StorageType> resultType;
+
+    switch (op)
+    {
+    case BinaryOp::ShiftLeft:
+    case BinaryOp::ShiftRight:
+      resultType = Clone();
+      break;
+    case BinaryOp::And:
+    case BinaryOp::Xor:
+    case BinaryOp::Or:
+      resultType =
+          integral >= dynamic_cast<const IntegralType *>(other)->integral
+              ? Clone()
+              : other->Clone();
+      dynamic_cast<IntegralType *>(resultType.get())->isUnsigned =
+          isUnsigned || dynamic_cast<const IntegralType *>(other)->isUnsigned;
+      break;
+    default:
+      break;
+    }
+
+    return resultType;
+  }
+
+  std::unique_ptr<StorageType> IntegralType::CheckComparison(
+      BinaryOp op, const StorageType *other) const
+  {
+    if (other->GetType() != StorageMetaType::Integral &&
+        other->GetType() != StorageMetaType::Real)
+    {
+      return nullptr;
+    }
+
+    return std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+  }
+
+  std::unique_ptr<StorageType> IntegralType::CheckLogic(
+      BinaryOp op, const StorageType *other) const
+  {
+    return std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+  }
+
+  std::wstring IntegralType::PrettyPrint() const
+  {
+    static const std::unordered_map<Integral, std::wstring> PrimitiveTypeNames =
+        {{Integral::Bool, L"Bool"},
+         {Integral::Byte, L"Byte"},
+         {Integral::Short, L"Short"},
+         {Integral::Int, L"Int"},
+         {Integral::Long, L"Long"}};
+
+    std::wstring result = StorageType::PrettyPrint();
+    if (isUnsigned)
+    {
+      result += L"U";
+    }
+    result += PrimitiveTypeNames.at(integral);
+    return result;
+  }
+
+} // namespace Vypr

@@ -3,46 +3,30 @@
 #include <memory>
 #include <unordered_map>
 
+#include "Vypr/AST/Expression/BinaryOp.hpp"
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
 
 namespace Vypr
 {
-  enum class BinaryOp
-  {
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-    Modulo,
-    ShiftLeft,
-    ShiftRight,
-    LessThan,
-    LessEqual,
-    GreaterThan,
-    GreaterEqual,
-    Equal,
-    NotEqual,
-    And,
-    Xor,
-    Or,
-    LogicalAnd,
-    LogicalOr
-  };
-
   class BinaryOpNode : public ExpressionNode
   {
   public:
-    BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> lhs,
-                 std::unique_ptr<ExpressionNode> rhs, size_t column,
+    BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> &lhs,
+                 std::unique_ptr<ExpressionNode> &rhs, size_t column,
                  size_t line);
 
     std::wstring PrettyPrint(int level) const override;
 
     static std::unique_ptr<ExpressionNode> Parse(
-        std::unique_ptr<ExpressionNode> base, CLangLexer &lexer);
+        std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer);
 
   private:
     void CastType();
+    void CastTypeIntegral();
+    void CastTypeArithmetic(BinaryOp op);
+    void CastTypeBitwise(BinaryOp op);
+    void CastTypeComparison(BinaryOp op);
+    void CastTypeLogic(BinaryOp op);
 
     BinaryOp m_op;
     std::unique_ptr<ExpressionNode> m_lhs;

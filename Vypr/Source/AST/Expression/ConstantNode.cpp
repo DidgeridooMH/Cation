@@ -3,7 +3,8 @@
 #include <codecvt>
 #include <locale>
 
-#include "Vypr/AST/UnknownTokenException.hpp"
+#include "Vypr/AST/Type/IntegralType.hpp"
+#include "Vypr/AST/UnexpectedTokenException.hpp"
 
 template <class... Ts> struct overloaded : Ts...
 {
@@ -16,9 +17,9 @@ template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
 
 namespace Vypr
 {
-  ConstantNode::ConstantNode(ValueType type, ConstantValue value, size_t column,
-                             size_t line)
-      : ExpressionNode(type, column, line), m_value(value)
+  ConstantNode::ConstantNode(std::unique_ptr<StorageType> &type,
+                             ConstantValue value, size_t column, size_t line)
+      : ExpressionNode(std::move(type), column, line), m_value(value)
   {
   }
 
@@ -47,15 +48,15 @@ namespace Vypr
       return ParseIntegerConstant(nextToken);
     case CLangTokenType::FloatConstant:
       return ParseFloatConstant(nextToken);
-    case CLangTokenType::CharacterConstant:
+    case CLangTokenType::CharacterConstant: {
+      std::unique_ptr<StorageType> constantType =
+          std::make_unique<IntegralType>(Integral::Byte, false, false, false);
       return std::make_unique<ConstantNode>(
-          ValueType{
-              .storage = PrimitiveType::Byte,
-          },
+          constantType,
           (uint8_t)std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>()
               .to_bytes(nextToken.content)[0],
           nextToken.column, nextToken.line);
-      break;
+    }
     case CLangTokenType::StringLiteral:
       return ParseStringLiteral(nextToken);
     default:
@@ -72,7 +73,7 @@ namespace Vypr
 
     int postfix = 0;
     auto iter = token.content.crbegin();
-    while (iter != token.content.crend() && *iter == 'u' && *iter == 'l')
+    while (iter != token.content.crend() && (*iter == 'u' || *iter == 'l'))
     {
       if (*iter == 'u')
       {
@@ -101,53 +102,58 @@ namespace Vypr
 
     std::wstring constant =
         token.content.substr(prefix, token.content.length() - postfix - prefix);
+
+    std::unique_ptr<StorageType> constantType;
+    ConstantValue value;
     if (isUnsigned)
     {
       if (longCount < 2)
       {
-        return std::make_unique<ConstantNode>(
-            ValueType{.storage = PrimitiveType::UInt},
-            (uint32_t)std::stoul(constant, nullptr, radix), token.column,
-            token.line);
+        constantType =
+            std::make_unique<IntegralType>(Integral::Int, true, false, false);
+        value = (uint32_t)std::stoul(constant, nullptr, radix);
       }
       else
       {
-        return std::make_unique<ConstantNode>(
-            ValueType{.storage = PrimitiveType::ULong},
-            (uint64_t)std::stoull(constant, nullptr, radix), token.column,
-            token.line);
+        constantType =
+            std::make_unique<IntegralType>(Integral::Long, true, false, false);
+        value = (uint64_t)std::stoull(constant, nullptr, radix);
       }
     }
     else
     {
       if (longCount < 2)
       {
-        return std::make_unique<ConstantNode>(
-            ValueType{.storage = PrimitiveType::Int},
-            (int32_t)std::stol(constant, nullptr, radix), token.column,
-            token.line);
+        constantType =
+            std::make_unique<IntegralType>(Integral::Int, false, false, false);
+        value = (int32_t)std::stol(constant, nullptr, radix);
       }
       else
       {
-        return std::make_unique<ConstantNode>(
-            ValueType{.storage = PrimitiveType::Long},
-            (int64_t)std::stoll(constant, nullptr, radix), token.column,
-            token.line);
+        constantType =
+            std::make_unique<IntegralType>(Integral::Long, false, false, false);
+        value = (int64_t)std::stoll(constant, nullptr, radix);
       }
     }
+    return std::make_unique<ConstantNode>(constantType, value, token.column,
+                                          token.line);
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::ParseFloatConstant(
       const CLangToken &token)
   {
     bool isDouble = true;
+    bool isLong = false;
 
     int postfix = 0;
     auto iter = token.content.crbegin();
     while (iter != token.content.crend() && (*iter == 'f' || *iter == 'l'))
     {
-      // TODO: Add long double type
-      if (*iter == 'f')
+      if (*iter == 'l')
+      {
+        isLong = true;
+      }
+      else if (*iter == 'f')
       {
         isDouble = false;
       }
@@ -157,18 +163,23 @@ namespace Vypr
 
     std::wstring constant =
         token.content.substr(0, token.content.length() - postfix);
-    if (isDouble)
+    if (isLong)
     {
-      return std::make_unique<ConstantNode>(
+      // TODO: Once real type is done.
+    }
+    else if (isDouble)
+    {
+      /*return std::make_unique<ConstantNode>(
           ValueType{.storage = PrimitiveType::Double},
-          std::stof(constant, nullptr), token.column, token.line);
+          std::stof(constant, nullptr), token.column, token.line);*/
     }
     else
     {
-      return std::make_unique<ConstantNode>(
+      /*return std::make_unique<ConstantNode>(
           ValueType{.storage = PrimitiveType::Float},
-          std::stod(constant, nullptr), token.column, token.line);
+          std::stod(constant, nullptr), token.column, token.line);*/
     }
+    return nullptr;
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::ParseStringLiteral(
@@ -176,10 +187,12 @@ namespace Vypr
   {
     std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
     std::string stringLiteral = converter.to_bytes(token.content);
-    return std::make_unique<ConstantNode>(
+    /*return std::make_unique<ConstantNode>(
         ValueType{.constant = true,
                   .indirection = {false},
                   .storage = PrimitiveType::Byte},
-        stringLiteral, token.column, token.line);
+        stringLiteral, token.column, token.line);*/
+    // TODO: Once pointer type is done.
+    return nullptr;
   }
 } // namespace Vypr

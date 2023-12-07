@@ -9,7 +9,10 @@ FetchContent_MakeAvailable(googletest)
 
 set(VYPR_TEST_SOURCE
   "Lexer/CLangLexerTest.cpp"
-  "Scanner/StringScannerTest.cpp")
+  "Scanner/StringScannerTest.cpp"
+  "AST/Type/StorageTypeTest.cpp"
+  "AST/Type/IntegralTypeTest.cpp"
+)
 
 add_executable(vyprtest ${VYPR_TEST_SOURCE})
 target_link_libraries(vyprtest libvypr GTest::gtest_main)
