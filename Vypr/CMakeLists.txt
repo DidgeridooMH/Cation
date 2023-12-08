@@ -26,6 +26,7 @@ set(LIBVYPR_HEADER
   "Include/Vypr/AST/Expression/PostfixOpNode.hpp"
   "Include/Vypr/AST/Type/StorageType.hpp"
   "Include/Vypr/AST/Type/IntegralType.hpp"
+  "Include/Vypr/AST/Type/PointerType.hpp"
   "Include/Vypr/AST/Type/TypeException.hpp"
   "Include/Vypr/Lexer/CLangLexer.hpp"
   "Include/Vypr/Lexer/CLangToken.hpp"
