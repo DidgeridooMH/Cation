@@ -2,6 +2,8 @@
 
 #include <unordered_map>
 
+#include "Vypr/AST/Type/PointerType.hpp"
+
 namespace Vypr
 {
   IntegralType::IntegralType(Integral integral, bool isUnsigned, bool isConst,
@@ -18,12 +20,7 @@ namespace Vypr
 
   std::unique_ptr<StorageType> IntegralType::Check(PostfixOp op) const
   {
-    std::unique_ptr<StorageType> resultType;
-    if (isLValue)
-    {
-      resultType = Clone();
-    }
-    return resultType;
+    return (isLValue && !isConst) ? Clone() : nullptr;
   }
 
   std::unique_ptr<StorageType> IntegralType::Check(UnaryOp op) const
@@ -56,10 +53,14 @@ namespace Vypr
           std::make_unique<IntegralType>(Integral::Bool, false, false, false);
       break;
     case UnaryOp::Deref:
-      return nullptr;
+      break;
     case UnaryOp::AddressOf:
-      // TODO: Finish after doing pointers.
-      return nullptr;
+      if (isLValue)
+      {
+        resultType = Clone();
+        resultType = std::make_unique<PointerType>(resultType, false, false);
+      }
+      break;
     case UnaryOp::Sizeof:
       resultType =
           std::make_unique<IntegralType>(Integral::Long, true, false, false);
@@ -116,7 +117,7 @@ namespace Vypr
   std::unique_ptr<StorageType> IntegralType::CheckArithmetic(
       BinaryOp op, const StorageType *other) const
   {
-    std::unique_ptr<StorageType> resultType = nullptr;
+    std::unique_ptr<StorageType> resultType;
 
     switch (other->GetType())
     {
@@ -135,15 +136,15 @@ namespace Vypr
       }
       break;
     case StorageMetaType::Pointer:
-      if (op != BinaryOp::Add)
+      if (op == BinaryOp::Add)
       {
-        // TODO: Use pointer type
+        resultType = other->Clone();
       }
       break;
     case StorageMetaType::Array:
-      if (op != BinaryOp::Add)
+      if (op == BinaryOp::Add)
       {
-        // TODO: Convert to pointer type.
+        // TODO: Do after array is made.
       }
       break;
     default:
@@ -189,8 +190,7 @@ namespace Vypr
   std::unique_ptr<StorageType> IntegralType::CheckComparison(
       BinaryOp op, const StorageType *other) const
   {
-    if (other->GetType() != StorageMetaType::Integral &&
-        other->GetType() != StorageMetaType::Real)
+    if (other->GetType() == StorageMetaType::Void)
     {
       return nullptr;
     }

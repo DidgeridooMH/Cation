@@ -7,6 +7,7 @@ set(LIBVYPR_SOURCE
   "Source/AST/Expression/BinaryOpNode.cpp"
   "Source/AST/Expression/PostfixOpNode.cpp"
   "Source/AST/Type/StorageType.cpp"
+  "Source/AST/Type/PointerType.cpp"
   "Source/AST/Type/IntegralType.cpp"
   "Source/Lexer/CLangKeywords.cpp"
   "Source/Lexer/CLangLexer.cpp"

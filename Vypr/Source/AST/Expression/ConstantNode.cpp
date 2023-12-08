@@ -4,6 +4,7 @@
 #include <locale>
 
 #include "Vypr/AST/Type/IntegralType.hpp"
+#include "Vypr/AST/Type/PointerType.hpp"
 #include "Vypr/AST/UnexpectedTokenException.hpp"
 
 template <class... Ts> struct overloaded : Ts...
@@ -187,12 +188,12 @@ namespace Vypr
   {
     std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
     std::string stringLiteral = converter.to_bytes(token.content);
-    /*return std::make_unique<ConstantNode>(
-        ValueType{.constant = true,
-                  .indirection = {false},
-                  .storage = PrimitiveType::Byte},
-        stringLiteral, token.column, token.line);*/
-    // TODO: Once pointer type is done.
-    return nullptr;
+
+    std::unique_ptr<StorageType> storageType =
+        std::make_unique<IntegralType>(Integral::Byte, false, false, false);
+    std::unique_ptr<StorageType> pointerType =
+        std::make_unique<PointerType>(storageType, true, false);
+    return std::make_unique<ConstantNode>(pointerType, stringLiteral,
+                                          token.column, token.line);
   }
 } // namespace Vypr

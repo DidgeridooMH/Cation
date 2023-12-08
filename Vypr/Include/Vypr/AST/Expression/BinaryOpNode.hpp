@@ -23,6 +23,8 @@ namespace Vypr
   private:
     void CastType();
     void CastTypeIntegral();
+    void CastTypePointer();
+
     void CastTypeArithmetic(BinaryOp op);
     void CastTypeBitwise(BinaryOp op);
     void CastTypeComparison(BinaryOp op);

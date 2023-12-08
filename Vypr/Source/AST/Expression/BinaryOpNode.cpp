@@ -2,6 +2,7 @@
 
 #include "Vypr/AST/Expression/CastNode.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
+#include "Vypr/AST/Type/PointerType.hpp"
 #include "Vypr/AST/Type/TypeException.hpp"
 #include "Vypr/AST/UnexpectedTokenException.hpp"
 
@@ -125,39 +126,76 @@ namespace Vypr
     }
   }
 
+  void BinaryOpNode::CastTypePointer()
+  {
+    if (m_lhs->type->GetType() != StorageMetaType::Pointer)
+    {
+      std::unique_ptr<StorageType> voidType = std::make_unique<StorageType>();
+      std::unique_ptr<StorageType> castType =
+          std::make_unique<PointerType>(voidType, false, false);
+      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
+    }
+
+    if (m_rhs->type->GetType() != StorageMetaType::Pointer)
+    {
+      std::unique_ptr<StorageType> voidType = std::make_unique<StorageType>();
+      std::unique_ptr<StorageType> castType =
+          std::make_unique<PointerType>(voidType, false, false);
+      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
+    }
+  }
+
   void BinaryOpNode::CastTypeArithmetic(BinaryOp op)
   {
-    if (type->GetType() == StorageMetaType::Integral)
+    switch (type->GetType())
     {
+    case StorageMetaType::Integral:
       CastTypeIntegral();
+      break;
+    default:
+      break;
     }
   }
 
   void BinaryOpNode::CastTypeBitwise(BinaryOp op)
   {
-    if (type->GetType() == StorageMetaType::Integral)
-    {
-      CastTypeIntegral();
-    }
+    CastTypeIntegral();
   }
 
   void BinaryOpNode::CastTypeComparison(BinaryOp op)
   {
-    if (type->GetType() == StorageMetaType::Integral)
+    switch (type->GetType())
     {
+    case StorageMetaType::Integral:
       CastTypeIntegral();
+      break;
+    case StorageMetaType::Pointer:
+      CastTypePointer();
+      break;
+    default:
+      break;
     }
   }
 
   void BinaryOpNode::CastTypeLogic(BinaryOp op)
   {
-    std::unique_ptr<StorageType> lhsType =
-        std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-    m_lhs = std::make_unique<CastNode>(lhsType, m_lhs);
+    if (m_lhs->type->GetType() != StorageMetaType::Integral ||
+        dynamic_cast<IntegralType *>(m_lhs->type.get())->integral !=
+            Integral::Bool)
+    {
+      std::unique_ptr<StorageType> lhsType =
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+      m_lhs = std::make_unique<CastNode>(lhsType, m_lhs);
+    }
 
-    std::unique_ptr<StorageType> rhsType =
-        std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-    m_rhs = std::make_unique<CastNode>(rhsType, m_rhs);
+    if (m_rhs->type->GetType() != StorageMetaType::Integral ||
+        dynamic_cast<IntegralType *>(m_rhs->type.get())->integral !=
+            Integral::Bool)
+    {
+      std::unique_ptr<StorageType> rhsType =
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+      m_rhs = std::make_unique<CastNode>(rhsType, m_rhs);
+    }
   }
 
   std::wstring BinaryOpNode::PrettyPrint(int level) const

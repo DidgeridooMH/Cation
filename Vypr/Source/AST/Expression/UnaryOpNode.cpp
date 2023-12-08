@@ -39,9 +39,9 @@ namespace Vypr
     }
 
     if (op == UnaryOp::LogicalNot &&
-            m_expression->type->GetType() != StorageMetaType::Integral ||
-        dynamic_cast<IntegralType *>(m_expression->type.get())->integral !=
-            Integral::Bool)
+        (m_expression->type->GetType() != StorageMetaType::Integral ||
+         dynamic_cast<IntegralType *>(m_expression->type.get())->integral !=
+             Integral::Bool))
 
     {
       std::unique_ptr<StorageType> castType =
