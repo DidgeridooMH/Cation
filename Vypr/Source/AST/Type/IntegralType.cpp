@@ -136,15 +136,10 @@ namespace Vypr
       }
       break;
     case StorageMetaType::Pointer:
-      if (op == BinaryOp::Add)
-      {
-        resultType = other->Clone();
-      }
-      break;
     case StorageMetaType::Array:
       if (op == BinaryOp::Add)
       {
-        // TODO: Do after array is made.
+        resultType = other->Clone();
       }
       break;
     default:

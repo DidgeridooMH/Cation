@@ -128,7 +128,12 @@ namespace Vypr
 
   void BinaryOpNode::CastTypePointer()
   {
-    if (m_lhs->type->GetType() != StorageMetaType::Pointer)
+    if (m_lhs->type->GetType() == StorageMetaType::Array)
+    {
+      std::unique_ptr<StorageType> castType = m_lhs->type->Clone();
+      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
+    }
+    else if (m_lhs->type->GetType() != StorageMetaType::Pointer)
     {
       std::unique_ptr<StorageType> voidType = std::make_unique<StorageType>();
       std::unique_ptr<StorageType> castType =
@@ -136,7 +141,12 @@ namespace Vypr
       m_lhs = std::make_unique<CastNode>(castType, m_lhs);
     }
 
-    if (m_rhs->type->GetType() != StorageMetaType::Pointer)
+    if (m_rhs->type->GetType() == StorageMetaType::Array)
+    {
+      std::unique_ptr<StorageType> castType = m_rhs->type->Clone();
+      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
+    }
+    else if (m_rhs->type->GetType() != StorageMetaType::Pointer)
     {
       std::unique_ptr<StorageType> voidType = std::make_unique<StorageType>();
       std::unique_ptr<StorageType> castType =
@@ -169,6 +179,7 @@ namespace Vypr
     case StorageMetaType::Integral:
       CastTypeIntegral();
       break;
+    case StorageMetaType::Array:
     case StorageMetaType::Pointer:
       CastTypePointer();
       break;

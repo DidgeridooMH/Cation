@@ -2,8 +2,6 @@
 #include <string>
 
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
-#include "Vypr/AST/Type/IntegralType.hpp"
-#include "Vypr/AST/Type/PointerType.hpp"
 #include "Vypr/AST/Type/TypeException.hpp"
 #include "Vypr/AST/UnexpectedTokenException.hpp"
 #include "Vypr/Lexer/CLangLexer.hpp"
