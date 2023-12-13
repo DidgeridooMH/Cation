@@ -110,6 +110,7 @@ namespace Vypr
   {
     IntegralType *exprType = dynamic_cast<IntegralType *>(type.get());
     IntegralType *lhs = dynamic_cast<IntegralType *>(m_lhs->type.get());
+
     if (lhs->integral < exprType->integral ||
         lhs->isUnsigned != exprType->isUnsigned)
     {
@@ -122,6 +123,28 @@ namespace Vypr
         rhs->isUnsigned != exprType->isUnsigned)
     {
       std::unique_ptr<StorageType> castType = exprType->Clone();
+      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
+    }
+  }
+
+  void BinaryOpNode::CastTypeIntegralComparison()
+  {
+    IntegralType *lhs = dynamic_cast<IntegralType *>(m_lhs->type.get());
+    IntegralType *rhs = dynamic_cast<IntegralType *>(m_rhs->type.get());
+
+    if (lhs->integral < rhs->integral)
+    {
+      std::unique_ptr<StorageType> castType = m_rhs->type->Clone();
+      dynamic_cast<IntegralType *>(castType.get())->isUnsigned |=
+          rhs->isUnsigned;
+      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
+    }
+
+    if (rhs->integral < lhs->integral)
+    {
+      std::unique_ptr<StorageType> castType = lhs->Clone();
+      dynamic_cast<IntegralType *>(castType.get())->isUnsigned |=
+          rhs->isUnsigned;
       m_rhs = std::make_unique<CastNode>(castType, m_rhs);
     }
   }
@@ -177,7 +200,7 @@ namespace Vypr
     switch (type->GetType())
     {
     case StorageMetaType::Integral:
-      CastTypeIntegral();
+      CastTypeIntegralComparison();
       break;
     case StorageMetaType::Array:
     case StorageMetaType::Pointer:
@@ -219,13 +242,14 @@ namespace Vypr
   }
 
   std::unique_ptr<ExpressionNode> BinaryOpNode::Parse(
-      std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer)
+      std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer,
+      TypeTable &symbolTable)
   {
     CLangToken opToken = lexer.GetToken();
     BinaryOp op = BinaryOperations.at(opToken.type);
 
-    std::unique_ptr<ExpressionNode> rhs =
-        ExpressionNode::Parse(lexer, BinaryOperationPrecedence.at(op));
+    std::unique_ptr<ExpressionNode> rhs = ExpressionNode::Parse(
+        lexer, symbolTable, BinaryOperationPrecedence.at(op));
     if (rhs == nullptr)
     {
       throw UnexpectedTokenException("expression", opToken.column,
@@ -234,5 +258,107 @@ namespace Vypr
 
     return std::make_unique<BinaryOpNode>(op, base, rhs, opToken.column,
                                           opToken.line);
+  }
+
+  llvm::Value *BinaryOpNode::GenerateCode(Context &context) const
+  {
+    llvm::Value *lhs = m_lhs->GenerateCode(context);
+    llvm::Value *rhs = m_rhs->GenerateCode(context);
+
+    llvm::Value *result = nullptr;
+    // TODO: Differentiate between real and integer
+    switch (m_op)
+    {
+    case BinaryOp::Add:
+      result = context.builder.CreateAdd(lhs, rhs);
+      break;
+    case BinaryOp::Subtract:
+      result = context.builder.CreateSub(lhs, rhs);
+      break;
+    case BinaryOp::Multiply:
+      result = context.builder.CreateMul(lhs, rhs);
+      break;
+    case BinaryOp::Divide:
+      if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
+      {
+        result = context.builder.CreateUDiv(lhs, rhs);
+      }
+      else
+      {
+        result = context.builder.CreateSDiv(lhs, rhs);
+      }
+      break;
+    case BinaryOp::Modulo:
+      if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
+      {
+        result = context.builder.CreateURem(lhs, rhs);
+      }
+      else
+      {
+        result = context.builder.CreateSRem(lhs, rhs);
+      }
+      break;
+    case BinaryOp::LogicalAnd:
+    case BinaryOp::And:
+      result = context.builder.CreateAnd(lhs, rhs);
+      break;
+    case BinaryOp::Xor:
+      result = context.builder.CreateXor(lhs, rhs);
+      break;
+    case BinaryOp::LogicalOr:
+    case BinaryOp::Or:
+      result = context.builder.CreateOr(lhs, rhs);
+      break;
+    case BinaryOp::LessThan:
+      if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
+      {
+        result = context.builder.CreateICmpSLT(lhs, rhs);
+      }
+      else
+      {
+        result = context.builder.CreateICmpULT(lhs, rhs);
+      }
+      break;
+    case BinaryOp::LessEqual:
+      if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
+      {
+        result = context.builder.CreateICmpSLE(lhs, rhs);
+      }
+      else
+      {
+        result = context.builder.CreateICmpULE(lhs, rhs);
+      }
+      break;
+    case BinaryOp::GreaterThan:
+      if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
+      {
+        result = context.builder.CreateICmpSGT(lhs, rhs);
+      }
+      else
+      {
+        result = context.builder.CreateICmpUGT(lhs, rhs);
+      }
+      break;
+    case BinaryOp::GreaterEqual:
+      if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
+      {
+        result = context.builder.CreateICmpSGE(lhs, rhs);
+      }
+      else
+      {
+        result = context.builder.CreateICmpUGE(lhs, rhs);
+      }
+      break;
+    case BinaryOp::Equal:
+      result = context.builder.CreateICmpEQ(lhs, rhs);
+      break;
+    case BinaryOp::NotEqual:
+      result = context.builder.CreateICmpNE(lhs, rhs);
+      break;
+    default:
+      break;
+    }
+
+    return result;
   }
 } // namespace Vypr

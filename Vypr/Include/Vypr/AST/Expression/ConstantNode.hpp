@@ -20,6 +20,8 @@ namespace Vypr
 
     std::wstring PrettyPrint(int level) const override;
 
+    llvm::Value *GenerateCode(Context &context) const override;
+
     static std::unique_ptr<ConstantNode> Parse(CLangLexer &lexer);
 
     static std::unique_ptr<ConstantNode> ParseIntegerConstant(

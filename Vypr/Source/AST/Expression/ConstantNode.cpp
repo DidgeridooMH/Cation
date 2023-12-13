@@ -6,15 +6,7 @@
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/PointerType.hpp"
 #include "Vypr/AST/UnexpectedTokenException.hpp"
-
-template <class... Ts> struct overloaded : Ts...
-{
-  using Ts::operator()...;
-};
-
-#ifdef __APPLE__
-template <class... Ts> overloaded(Ts...) -> overloaded<Ts...>;
-#endif
+#include "Vypr/Util/Overload.hpp"
 
 namespace Vypr
 {
@@ -38,6 +30,54 @@ namespace Vypr
         m_value);
     result += L")\n";
     return result;
+  }
+
+  llvm::Value *ConstantNode::GenerateCode(Context &context) const
+  {
+    return std::visit(
+        [&](const auto &constant) -> llvm::Value * {
+          using T = std::decay_t<decltype(constant)>;
+          if constexpr (std::is_same_v<T, int32_t>)
+          {
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(context.context), constant, true);
+          }
+          else if constexpr (std::is_same_v<T, int64_t>)
+          {
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt64Ty(context.context), constant, true);
+          }
+          else if constexpr (std::is_same_v<T, uint8_t>)
+          {
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt8Ty(context.context), constant, false);
+          }
+          else if constexpr (std::is_same_v<T, uint32_t>)
+          {
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(context.context), constant, false);
+          }
+          else if constexpr (std::is_same_v<T, uint64_t>)
+          {
+            return llvm::ConstantInt::get(
+                llvm::Type::getInt64Ty(context.context), constant, false);
+          }
+          else if constexpr (std::is_same_v<T, float>)
+          {
+            return llvm::ConstantInt::get(
+                llvm::Type::getFloatTy(context.context), constant);
+          }
+          else if constexpr (std::is_same_v<T, double>)
+          {
+            return llvm::ConstantInt::get(
+                llvm::Type::getDoubleTy(context.context), constant);
+          }
+          else
+          {
+            return nullptr;
+          }
+        },
+        m_value);
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::Parse(CLangLexer &lexer)

@@ -4,6 +4,7 @@
 #include "Vypr/AST/Expression/ConstantNode.hpp"
 #include "Vypr/AST/Expression/PostfixOpNode.hpp"
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
+#include "Vypr/AST/Expression/VariableNode.hpp"
 #include "Vypr/AST/UnexpectedTokenException.hpp"
 
 namespace Vypr
@@ -31,6 +32,7 @@ namespace Vypr
   }
 
   std::unique_ptr<ExpressionNode> ExpressionNode::Parse(CLangLexer &lexer,
+                                                        TypeTable &symbolTable,
                                                         int precedenceLevel)
   {
     std::unique_ptr<ExpressionNode> base;
@@ -38,7 +40,7 @@ namespace Vypr
     CLangToken nextToken = lexer.PeekToken();
     if (UnaryOperations.contains(nextToken.type))
     {
-      base = UnaryOpNode::Parse(lexer);
+      base = UnaryOpNode::Parse(lexer, symbolTable);
     }
     else
     {
@@ -46,7 +48,7 @@ namespace Vypr
       {
       case CLangTokenType::LeftParenthesis: {
         lexer.GetToken();
-        base = ExpressionNode::Parse(lexer);
+        base = ExpressionNode::Parse(lexer, symbolTable);
         CLangToken groupClose = lexer.GetToken();
         if (groupClose.type != CLangTokenType::RightParenthesis)
         {
@@ -62,7 +64,7 @@ namespace Vypr
         base = ConstantNode::Parse(lexer);
         break;
       case CLangTokenType::Identifier:
-        // TODO: Variable node.
+        base = VariableNode::Parse(lexer, symbolTable);
         break;
       default:
         break;
@@ -97,7 +99,7 @@ namespace Vypr
       }
       else
       {
-        base = BinaryOpNode::Parse(base, lexer);
+        base = BinaryOpNode::Parse(base, lexer, symbolTable);
       }
       nextToken = lexer.PeekToken();
     }

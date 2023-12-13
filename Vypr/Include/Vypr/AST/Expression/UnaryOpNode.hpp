@@ -16,7 +16,8 @@ namespace Vypr
 
     std::wstring PrettyPrint(int level) const override;
 
-    static std::unique_ptr<ExpressionNode> Parse(CLangLexer &lexer);
+    static std::unique_ptr<ExpressionNode> Parse(CLangLexer &lexer,
+                                                 TypeTable &symbolTable);
 
   private:
     UnaryOp m_op;

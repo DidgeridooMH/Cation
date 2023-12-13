@@ -18,11 +18,15 @@ namespace Vypr
     std::wstring PrettyPrint(int level) const override;
 
     static std::unique_ptr<ExpressionNode> Parse(
-        std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer);
+        std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer,
+        TypeTable &symbolTable);
+
+    llvm::Value *GenerateCode(Context &context) const override;
 
   private:
     void CastType();
     void CastTypeIntegral();
+    void CastTypeIntegralComparison();
     void CastTypePointer();
 
     void CastTypeArithmetic(BinaryOp op);
