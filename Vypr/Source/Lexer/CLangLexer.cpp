@@ -146,12 +146,13 @@ namespace Vypr
       return L"";
     }
 
-    if (std::find_if(
-            unicodeCharacter.begin(), unicodeCharacter.end(), [](wchar_t c) {
-              return !iswdigit(c) && towlower(c) < 'a' && towlower(c) > 'f';
-            }) != unicodeCharacter.end())
+    for (wchar_t codepoint : unicodeCharacter)
     {
-      return L"";
+      if (!iswdigit(codepoint) && towlower(codepoint) < 'a' &&
+          towlower(codepoint) > 'f')
+      {
+        return L"";
+      }
     }
 
     std::wstring buffer;
