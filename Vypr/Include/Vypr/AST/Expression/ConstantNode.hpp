@@ -5,16 +5,19 @@
 #include <variant>
 
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
-#include "Vypr/Lexer/CLangLexer.hpp"
-#include "Vypr/Lexer/CLangToken.hpp"
 
 namespace Vypr
 {
-  using ConstantValue = std::variant<int32_t, int64_t, uint8_t, uint32_t,
-                                     uint64_t, float, double, std::string>;
+  // TODO: Interpret long double as double
+  using ConstantValue =
+      std::variant<int32_t, int64_t, uint8_t, uint32_t, uint64_t, float, double,
+                   long double, std::string>;
 
-  struct ConstantNode : public ExpressionNode
+  class CLangLexer;
+  class CLangToken;
+  class ConstantNode : public ExpressionNode
   {
+  public:
     ConstantNode(std::unique_ptr<StorageType> &type, ConstantValue value,
                  size_t column, size_t line);
 
@@ -24,6 +27,7 @@ namespace Vypr
 
     static std::unique_ptr<ConstantNode> Parse(CLangLexer &lexer);
 
+  private:
     static std::unique_ptr<ConstantNode> ParseIntegerConstant(
         const CLangToken &token);
 
@@ -33,7 +37,6 @@ namespace Vypr
     static std::unique_ptr<ConstantNode> ParseStringLiteral(
         const CLangToken &token);
 
-  private:
     ConstantValue m_value;
   };
 } // namespace Vypr

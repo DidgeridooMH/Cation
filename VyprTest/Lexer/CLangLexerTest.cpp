@@ -355,15 +355,15 @@ namespace CLangLexerTest
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLL, L"1ll", L"1ll");
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixULL, L"1ull", L"1ull");
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLLU, L"1llu", L"1llu");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNoFraction, L"12e3",
-                                  L"12e3");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointZeroExponent, L"12e0",
-                                  L"12e0");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointPositiveExponent,
-                                  L"12e+23", L"12e+23");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalFloatingPointNegativeExponent,
-                                  L"12e-23", L"12e-23");
-  TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalZeroExponent, L"0e3", L"0e3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNoFraction, L"12e3",
+                                L"12e3");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointZeroExponent, L"12e0",
+                                L"12e0");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointPositiveExponent, L"12e+23",
+                                L"12e+23");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNegativeExponent, L"12e-23",
+                                L"12e-23");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalZeroExponent, L"0e3", L"0e3");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalZeroFloat, L"0.0", L"0.0");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalZeroFloatNoFraction, L"0.", L"0.");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPoint, L"1434.23e3",

@@ -280,6 +280,8 @@ namespace Vypr
 
     if (towlower(m_scanner->LookAhead(0)) == exponentDelimiter)
     {
+      isFloatingPoint = true;
+
       buffer += towlower(m_scanner->Next());
 
       if (m_scanner->LookAhead(0) == '-' || m_scanner->LookAhead(0) == '+')

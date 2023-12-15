@@ -5,7 +5,10 @@
 
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/PointerType.hpp"
+#include "Vypr/AST/Type/RealType.hpp"
 #include "Vypr/AST/UnexpectedTokenException.hpp"
+#include "Vypr/Lexer/CLangLexer.hpp"
+#include "Vypr/Lexer/CLangToken.hpp"
 #include "Vypr/Util/Overload.hpp"
 
 namespace Vypr
@@ -140,42 +143,36 @@ namespace Vypr
       prefix = 2;
       radix = 16;
     }
+    else if (token.content.starts_with(L"0"))
+    {
+      prefix = 0;
+      radix = 8;
+    }
 
     std::wstring constant =
         token.content.substr(prefix, token.content.length() - postfix - prefix);
 
-    std::unique_ptr<StorageType> constantType;
+    std::unique_ptr<StorageType> constantType = std::make_unique<IntegralType>(
+        longCount < 2 ? Integral::Int : Integral::Long, isUnsigned, false,
+        false);
     ConstantValue value;
-    if (isUnsigned)
+    if (isUnsigned && longCount < 2)
     {
-      if (longCount < 2)
-      {
-        constantType =
-            std::make_unique<IntegralType>(Integral::Int, true, false, false);
-        value = (uint32_t)std::stoul(constant, nullptr, radix);
-      }
-      else
-      {
-        constantType =
-            std::make_unique<IntegralType>(Integral::Long, true, false, false);
-        value = (uint64_t)std::stoull(constant, nullptr, radix);
-      }
+      value = (uint32_t)std::stoul(constant, nullptr, radix);
+    }
+    else if (isUnsigned)
+    {
+      value = (uint64_t)std::stoull(constant, nullptr, radix);
+    }
+    else if (longCount < 2)
+    {
+      value = (int32_t)std::stol(constant, nullptr, radix);
     }
     else
     {
-      if (longCount < 2)
-      {
-        constantType =
-            std::make_unique<IntegralType>(Integral::Int, false, false, false);
-        value = (int32_t)std::stol(constant, nullptr, radix);
-      }
-      else
-      {
-        constantType =
-            std::make_unique<IntegralType>(Integral::Long, false, false, false);
-        value = (int64_t)std::stoll(constant, nullptr, radix);
-      }
+      value = (int64_t)std::stoll(constant, nullptr, radix);
     }
+
     return std::make_unique<ConstantNode>(constantType, value, token.column,
                                           token.line);
   }
@@ -204,23 +201,27 @@ namespace Vypr
 
     std::wstring constant =
         token.content.substr(0, token.content.length() - postfix);
+
+    std::unique_ptr<StorageType> constantType;
+    ConstantValue value;
     if (isLong)
     {
-      // TODO: Once real type is done.
+      constantType = std::make_unique<RealType>(Real::LongDouble, false, false);
+      value = std::stold(constant);
     }
     else if (isDouble)
     {
-      /*return std::make_unique<ConstantNode>(
-          ValueType{.storage = PrimitiveType::Double},
-          std::stof(constant, nullptr), token.column, token.line);*/
+      constantType = std::make_unique<RealType>(Real::Double, false, false);
+      value = std::stold(constant);
     }
     else
     {
-      /*return std::make_unique<ConstantNode>(
-          ValueType{.storage = PrimitiveType::Float},
-          std::stod(constant, nullptr), token.column, token.line);*/
+      constantType = std::make_unique<RealType>(Real::Float, false, false);
+      value = std::stold(constant);
     }
-    return nullptr;
+    return std::make_unique<ConstantNode>(constantType, value, token.column,
+                                          token.line);
+    ;
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::ParseStringLiteral(
@@ -230,9 +231,9 @@ namespace Vypr
     std::string stringLiteral = converter.to_bytes(token.content);
 
     std::unique_ptr<StorageType> storageType =
-        std::make_unique<IntegralType>(Integral::Byte, false, false, false);
+        std::make_unique<IntegralType>(Integral::Byte, false, true, false);
     std::unique_ptr<StorageType> pointerType =
-        std::make_unique<PointerType>(storageType, true, false);
+        std::make_unique<PointerType>(storageType, false, false);
     return std::make_unique<ConstantNode>(pointerType, stringLiteral,
                                           token.column, token.line);
   }
