@@ -82,10 +82,10 @@ namespace ConstantNodeTest
 
   PARSE_FLOAT_TEST(ZeroFloat, "0.0f", Float);
   PARSE_FLOAT_TEST(ZeroDouble, "0.0", Double);
-  PARSE_FLOAT_TEST(ZeroLongDouble, "0.0l", LongDouble);
+  PARSE_FLOAT_TEST(ZeroLongDouble, "0.0l", Double);
   PARSE_FLOAT_TEST(CommonFloat, "20.40f", Float);
   PARSE_FLOAT_TEST(CommonDouble, "30.0", Double);
-  PARSE_FLOAT_TEST(CommonLongDouble, "40.0l", LongDouble);
+  PARSE_FLOAT_TEST(CommonLongDouble, "40.0l", Double);
 
 #define PARSE_FLOAT_TEST(testName, content, realType)                          \
   TEST(Parse, testName)                                                        \
@@ -186,8 +186,7 @@ namespace ConstantNodeTest
               std::numeric_limits<int32_t>::max());
   }
 
-  // TODO: Display error/warning
-  TEST(GenerateCode, Int32AboveMax)
+  TEST(GenerateCode, Int32AboveMaxAllowed)
   {
     Vypr::CLangLexer lexer(
         std::make_unique<Vypr::StringScanner>(L"2147483648"));
@@ -198,8 +197,9 @@ namespace ConstantNodeTest
     llvm::Value *code = constant->GenerateCode(context);
 
     ASSERT_TRUE(code->getType()->isIntegerTy());
-    ASSERT_EQ(code->getType()->getIntegerBitWidth(), 32);
-    ASSERT_EQ(llvm::dyn_cast<llvm::ConstantInt>(code)->getValue(), 0);
+    ASSERT_EQ(code->getType()->getIntegerBitWidth(), 64);
+    ASSERT_EQ(llvm::dyn_cast<llvm::ConstantInt>(code)->getValue(),
+              2147483648LL);
   }
 
   TEST(GenerateCode, UInt32Common)
@@ -246,8 +246,7 @@ namespace ConstantNodeTest
               std::numeric_limits<uint32_t>::max());
   }
 
-  // TODO: Display warning/error.
-  TEST(GenerateCode, UInt32AboveMax)
+  TEST(GenerateCode, UInt32AboveMaxAllowed)
   {
     Vypr::CLangLexer lexer(
         std::make_unique<Vypr::StringScanner>(L"4294967296U"));
@@ -258,9 +257,9 @@ namespace ConstantNodeTest
     llvm::Value *code = constant->GenerateCode(context);
 
     ASSERT_TRUE(code->getType()->isIntegerTy());
-    ASSERT_EQ(code->getType()->getIntegerBitWidth(), 32);
+    ASSERT_EQ(code->getType()->getIntegerBitWidth(), 64);
     ASSERT_EQ(llvm::dyn_cast<llvm::ConstantInt>(code)->getValue(),
-              std::numeric_limits<uint32_t>::max());
+              4294967296ULL);
   }
 
   TEST(GenerateCode, Int64Common)
@@ -293,8 +292,7 @@ namespace ConstantNodeTest
               std::numeric_limits<int64_t>::max());
   }
 
-  // TODO: Error or warning
-  TEST(GenerateCode, Int64AboveMax)
+  TEST(GenerateCode, Int64AboveMaxAllowed)
   {
     Vypr::CLangLexer lexer(
         std::make_unique<Vypr::StringScanner>(L"9223372036854775808LL"));
@@ -307,7 +305,7 @@ namespace ConstantNodeTest
     ASSERT_TRUE(code->getType()->isIntegerTy());
     ASSERT_EQ(code->getType()->getIntegerBitWidth(), 64);
     ASSERT_EQ(llvm::dyn_cast<llvm::ConstantInt>(code)->getValue(),
-              std::numeric_limits<int64_t>::max());
+              9223372036854775808ULL);
   }
 
   TEST(GenerateCode, UInt64Common)
@@ -340,21 +338,11 @@ namespace ConstantNodeTest
               std::numeric_limits<uint64_t>::max());
   }
 
-  // TODO: Error or warning
   TEST(GenerateCode, UInt64AboveMax)
   {
     Vypr::CLangLexer lexer(
         std::make_unique<Vypr::StringScanner>(L"18446744073709551616ULL"));
-    std::unique_ptr<Vypr::ConstantNode> constant =
-        Vypr::ConstantNode::Parse(lexer);
-    Vypr::Context context("TestModule");
-
-    llvm::Value *code = constant->GenerateCode(context);
-
-    ASSERT_TRUE(code->getType()->isIntegerTy());
-    ASSERT_EQ(code->getType()->getIntegerBitWidth(), 64);
-    ASSERT_EQ(llvm::dyn_cast<llvm::ConstantInt>(code)->getValue(),
-              std::numeric_limits<uint64_t>::max());
+    ASSERT_THROW(Vypr::ConstantNode::Parse(lexer), Vypr::CompileError);
   }
 
   TEST(GenerateCode, UInt64Min)

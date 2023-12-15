@@ -1,5 +1,7 @@
 #include "Vypr/AST/SymbolTable.hpp"
 
+#include <llvm/IR/Instructions.h>
+
 #include "Vypr/AST/CompileError.hpp"
 
 namespace Vypr

@@ -8,10 +8,8 @@
 
 namespace Vypr
 {
-  // TODO: Interpret long double as double
-  using ConstantValue =
-      std::variant<int32_t, int64_t, uint8_t, uint32_t, uint64_t, float, double,
-                   long double, std::string>;
+  using ConstantValue = std::variant<int32_t, int64_t, uint8_t, uint32_t,
+                                     uint64_t, float, double, std::string>;
 
   class CLangLexer;
   class CLangToken;

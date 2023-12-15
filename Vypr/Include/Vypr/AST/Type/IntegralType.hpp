@@ -41,11 +41,5 @@ namespace Vypr
 
     std::unique_ptr<StorageType> CheckBitwise(BinaryOp op,
                                               const StorageType *other) const;
-
-    std::unique_ptr<StorageType> CheckComparison(
-        BinaryOp op, const StorageType *other) const;
-
-    std::unique_ptr<StorageType> CheckLogic(BinaryOp op,
-                                            const StorageType *other) const;
   };
 } // namespace Vypr

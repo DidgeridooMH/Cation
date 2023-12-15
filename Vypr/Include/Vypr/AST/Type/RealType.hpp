@@ -9,8 +9,7 @@ namespace Vypr
   enum class Real
   {
     Float,
-    Double,
-    LongDouble
+    Double
   };
 
   class RealType : public StorageType
@@ -18,7 +17,22 @@ namespace Vypr
   public:
     RealType(Real real, bool isConst, bool isLValue);
 
+    std::unique_ptr<StorageType> Clone() const override;
+
+    std::unique_ptr<StorageType> Check(PostfixOp op) const override;
+
+    std::unique_ptr<StorageType> Check(UnaryOp op) const override;
+
+    std::unique_ptr<StorageType> Check(BinaryOp op,
+                                       const StorageType *other) const override;
+
+    std::wstring PrettyPrint() const override;
+
     Real real;
+
+  private:
+    std::unique_ptr<StorageType> CheckArithmetic(
+        BinaryOp op, const StorageType *other) const;
   };
 
 } // namespace Vypr

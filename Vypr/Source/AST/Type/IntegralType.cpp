@@ -97,11 +97,10 @@ namespace Vypr
     case BinaryOp::GreaterEqual:
     case BinaryOp::Equal:
     case BinaryOp::NotEqual:
-      resultType = CheckComparison(op, other);
-      break;
     case BinaryOp::LogicalAnd:
     case BinaryOp::LogicalOr:
-      resultType = CheckLogic(op, other);
+      resultType =
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
       break;
     }
 
@@ -132,7 +131,7 @@ namespace Vypr
     case StorageMetaType::Real:
       if (op != BinaryOp::Modulo)
       {
-        // TODO: Use real type
+        resultType = other->Clone();
       }
       break;
     case StorageMetaType::Pointer:
@@ -182,23 +181,6 @@ namespace Vypr
     return resultType;
   }
 
-  std::unique_ptr<StorageType> IntegralType::CheckComparison(
-      BinaryOp op, const StorageType *other) const
-  {
-    if (other->GetType() == StorageMetaType::Void)
-    {
-      return nullptr;
-    }
-
-    return std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-  }
-
-  std::unique_ptr<StorageType> IntegralType::CheckLogic(
-      BinaryOp op, const StorageType *other) const
-  {
-    return std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-  }
-
   std::wstring IntegralType::PrettyPrint() const
   {
     static const std::unordered_map<Integral, std::wstring> PrimitiveTypeNames =
@@ -216,5 +198,4 @@ namespace Vypr
     result += PrimitiveTypeNames.at(integral);
     return result;
   }
-
 } // namespace Vypr

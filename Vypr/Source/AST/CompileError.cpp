@@ -47,6 +47,8 @@ namespace Vypr
       return L"Undefined symbol";
     case CompileErrorId::InvalidOperands:
       return L"Invalid operands";
+    case CompileErrorId::ConstantTooLarge:
+      return L"Constant is too large";
     }
 
     return L"Unknown error";

@@ -355,6 +355,7 @@ namespace CLangLexerTest
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLL, L"1ll", L"1ll");
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixULL, L"1ull", L"1ull");
   TEST_GET_TOKEN_CONSTANT_INTEGER(DecimalSuffixLLU, L"1llu", L"1llu");
+  TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatSuffixOnly, L"3F", L"3f");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointNoFraction, L"12e3",
                                 L"12e3");
   TEST_GET_TOKEN_CONSTANT_FLOAT(DecimalFloatingPointZeroExponent, L"12e0",

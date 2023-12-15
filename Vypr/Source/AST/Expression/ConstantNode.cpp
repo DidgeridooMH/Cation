@@ -67,12 +67,12 @@ namespace Vypr
           }
           else if constexpr (std::is_same_v<T, float>)
           {
-            return llvm::ConstantInt::get(
+            return llvm::ConstantFP::get(
                 llvm::Type::getFloatTy(context.context), constant);
           }
           else if constexpr (std::is_same_v<T, double>)
           {
-            return llvm::ConstantInt::get(
+            return llvm::ConstantFP::get(
                 llvm::Type::getDoubleTy(context.context), constant);
           }
           else
@@ -155,22 +155,48 @@ namespace Vypr
     std::unique_ptr<StorageType> constantType = std::make_unique<IntegralType>(
         longCount < 2 ? Integral::Int : Integral::Long, isUnsigned, false,
         false);
+    bool valueParsed = false;
     ConstantValue value;
-    if (isUnsigned && longCount < 2)
+    while (!valueParsed)
     {
-      value = (uint32_t)std::stoul(constant, nullptr, radix);
-    }
-    else if (isUnsigned)
-    {
-      value = (uint64_t)std::stoull(constant, nullptr, radix);
-    }
-    else if (longCount < 2)
-    {
-      value = (int32_t)std::stol(constant, nullptr, radix);
-    }
-    else
-    {
-      value = (int64_t)std::stoll(constant, nullptr, radix);
+      // TODO: Make a flag disabling constant conversion.
+      try
+      {
+        if (isUnsigned && longCount < 2)
+        {
+          value = (uint32_t)std::stoul(constant, nullptr, radix);
+        }
+        else if (isUnsigned)
+        {
+          value = (uint64_t)std::stoull(constant, nullptr, radix);
+        }
+        else if (longCount < 2)
+        {
+          value = (int32_t)std::stol(constant, nullptr, radix);
+        }
+        else
+        {
+          value = (int64_t)std::stoll(constant, nullptr, radix);
+        }
+
+        valueParsed = true;
+      }
+      catch (...)
+      {
+        if (longCount < 2)
+        {
+          longCount = 2;
+        }
+        else if (!isUnsigned)
+        {
+          isUnsigned = true;
+        }
+        else
+        {
+          throw CompileError(CompileErrorId::ConstantTooLarge, token.column,
+                             token.line, token.content);
+        }
+      }
     }
 
     return std::make_unique<ConstantNode>(constantType, value, token.column,
@@ -181,7 +207,6 @@ namespace Vypr
       const CLangToken &token)
   {
     bool isDouble = true;
-    bool isLong = false;
 
     int postfix = 0;
     auto iter = token.content.crbegin();
@@ -189,7 +214,7 @@ namespace Vypr
     {
       if (*iter == 'l')
       {
-        isLong = true;
+        isDouble = true;
       }
       else if (*iter == 'f')
       {
@@ -204,24 +229,38 @@ namespace Vypr
 
     std::unique_ptr<StorageType> constantType;
     ConstantValue value;
-    if (isLong)
+    bool valueParsed = false;
+    while (!valueParsed)
     {
-      constantType = std::make_unique<RealType>(Real::LongDouble, false, false);
-      value = std::stold(constant);
-    }
-    else if (isDouble)
-    {
-      constantType = std::make_unique<RealType>(Real::Double, false, false);
-      value = std::stold(constant);
-    }
-    else
-    {
-      constantType = std::make_unique<RealType>(Real::Float, false, false);
-      value = std::stold(constant);
+      try
+      {
+        if (isDouble)
+        {
+          constantType = std::make_unique<RealType>(Real::Double, false, false);
+          value = std::stod(constant);
+        }
+        else
+        {
+          constantType = std::make_unique<RealType>(Real::Float, false, false);
+          value = std::stof(constant);
+        }
+        valueParsed = true;
+      }
+      catch (...)
+      {
+        if (!isDouble)
+        {
+          isDouble = true;
+        }
+        else
+        {
+          throw CompileError(CompileErrorId::ConstantTooLarge, token.column,
+                             token.line, token.content);
+        }
+      }
     }
     return std::make_unique<ConstantNode>(constantType, value, token.column,
                                           token.line);
-    ;
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::ParseStringLiteral(

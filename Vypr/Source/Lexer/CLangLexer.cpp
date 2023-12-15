@@ -296,6 +296,10 @@ namespace Vypr
       throw ParsingException(L"Invalid numerical constant.",
                              m_scanner->GetColumn(), m_scanner->GetLine());
     }
+    else if (towlower(m_scanner->LookAhead(0)) == 'f')
+    {
+      isFloatingPoint = true;
+    }
 
     return {isFloatingPoint, buffer};
   }

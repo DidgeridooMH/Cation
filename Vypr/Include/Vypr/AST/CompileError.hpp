@@ -12,7 +12,8 @@ namespace Vypr
     ExpectedIdentifier,
     ExpectedGroupEnd,
     UndefinedSymbol,
-    InvalidOperands
+    InvalidOperands,
+    ConstantTooLarge
   };
 
   class CompileError : std::exception

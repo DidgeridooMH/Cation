@@ -30,7 +30,7 @@ int main(int, char **)
 
   // Temp
 
-  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"var == dabc"));
+  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"3.0f < 2.0f"));
 
   try
   {
