@@ -2,10 +2,10 @@
 
 #include <gtest/gtest.h>
 
+#include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/PointerType.hpp"
 #include "Vypr/AST/Type/RealType.hpp"
-#include "Vypr/AST/UnexpectedTokenException.hpp"
 #include "Vypr/Scanner/StringScanner.hpp"
 
 namespace ConstantNodeTest
@@ -13,8 +13,7 @@ namespace ConstantNodeTest
   TEST(Parse, InvalidConstant)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"!"));
-    ASSERT_THROW(Vypr::ConstantNode::Parse(lexer),
-                 Vypr::UnexpectedTokenException);
+    ASSERT_THROW(Vypr::ConstantNode::Parse(lexer), Vypr::CompileError);
   }
 
 #define PARSE_INT_TEST(testName, content, integralType, sign)                  \

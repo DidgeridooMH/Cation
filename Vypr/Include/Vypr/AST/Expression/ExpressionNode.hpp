@@ -22,10 +22,7 @@ namespace Vypr
 
     virtual std::wstring PrettyPrint(int level) const;
 
-    virtual llvm::Value *GenerateCode(Context &context) const
-    {
-      return nullptr;
-    };
+    virtual llvm::Value *GenerateCode(Context &context) const;
 
     std::unique_ptr<StorageType> type;
     size_t column;

@@ -1,5 +1,5 @@
 set(LIBVYPR_SOURCE
-  "Source/AST/UnexpectedTokenException.cpp"
+  "Source/AST/CompileError.cpp"
   "Source/AST/Expression/ConstantNode.cpp"
   "Source/AST/Expression/CastNode.cpp"
   "Source/AST/Expression/ExpressionNode.cpp"
@@ -12,6 +12,7 @@ set(LIBVYPR_SOURCE
   "Source/AST/Type/RealType.cpp"
   "Source/AST/Type/ArrayType.cpp"
   "Source/AST/SymbolTable.cpp"
+  "Source/CodeGen/Context.cpp"
   "Source/Lexer/CLangKeywords.cpp"
   "Source/Lexer/CLangLexer.cpp"
   "Source/Lexer/CLangPunctuators.cpp"
@@ -20,7 +21,7 @@ set(LIBVYPR_SOURCE
 )
 
 set(LIBVYPR_HEADER
-  "Include/Vypr/AST/UnexpectedTokenException.hpp"
+  "Include/Vypr/AST/CompileError.hpp"
   "Include/Vypr/AST/Expression/ConstantNode.hpp"
   "Include/Vypr/AST/Expression/CastNode.hpp"
   "Include/Vypr/AST/Expression/ExpressionNode.hpp"
@@ -34,7 +35,6 @@ set(LIBVYPR_HEADER
   "Include/Vypr/AST/Type/RealType.hpp"
   "Include/Vypr/AST/Type/PointerType.hpp"
   "Include/Vypr/AST/Type/ArrayType.hpp"
-  "Include/Vypr/AST/Type/TypeException.hpp"
   "Include/Vypr/AST/SymbolTable.hpp"
   "Include/Vypr/CodeGen/Context.hpp"
   "Include/Vypr/Lexer/CLangLexer.hpp"
@@ -54,7 +54,7 @@ find_package(LLVM REQUIRED CONFIG)
 
 add_library(libvypr ${LIBVYPR_SOURCE} ${LIBVYPR_HEADER})
 
-target_include_directories(libvypr PUBLIC Include/ ${LLVM_INCLUDE_DIRS})
+target_include_directories(libvypr PUBLIC Include/ SYSTEM ${LLVM_INCLUDE_DIRS})
 add_definitions(${LLVM_DEFINITIONS})
 
 set(LLVM_COMPONENTS

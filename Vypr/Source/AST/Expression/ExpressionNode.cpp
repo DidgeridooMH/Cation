@@ -1,11 +1,11 @@
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
 
+#include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/BinaryOpNode.hpp"
 #include "Vypr/AST/Expression/ConstantNode.hpp"
 #include "Vypr/AST/Expression/PostfixOpNode.hpp"
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
 #include "Vypr/AST/Expression/VariableNode.hpp"
-#include "Vypr/AST/UnexpectedTokenException.hpp"
 
 namespace Vypr
 {
@@ -31,6 +31,11 @@ namespace Vypr
     return result;
   }
 
+  llvm::Value *ExpressionNode::GenerateCode(Context &context) const
+  {
+    return nullptr;
+  };
+
   std::unique_ptr<ExpressionNode> ExpressionNode::Parse(CLangLexer &lexer,
                                                         TypeTable &symbolTable,
                                                         int precedenceLevel)
@@ -52,8 +57,8 @@ namespace Vypr
         CLangToken groupClose = lexer.GetToken();
         if (groupClose.type != CLangTokenType::RightParenthesis)
         {
-          throw UnexpectedTokenException(")", groupClose.line,
-                                         groupClose.column);
+          throw CompileError(CompileErrorId::ExpectedGroupEnd, groupClose.line,
+                             groupClose.column);
         }
         break;
       }

@@ -3,10 +3,10 @@
 #include <codecvt>
 #include <locale>
 
+#include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/PointerType.hpp"
 #include "Vypr/AST/Type/RealType.hpp"
-#include "Vypr/AST/UnexpectedTokenException.hpp"
 #include "Vypr/Lexer/CLangLexer.hpp"
 #include "Vypr/Lexer/CLangToken.hpp"
 #include "Vypr/Util/Overload.hpp"
@@ -104,8 +104,8 @@ namespace Vypr
     case CLangTokenType::StringLiteral:
       return ParseStringLiteral(nextToken);
     default:
-      throw UnexpectedTokenException("constant or literal", nextToken.line,
-                                     nextToken.column);
+      throw CompileError(CompileErrorId::ExpectedConstant, nextToken.line,
+                         nextToken.column);
     }
   }
 

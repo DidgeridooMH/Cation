@@ -1,10 +1,9 @@
 #include "Vypr/AST/Expression/BinaryOpNode.hpp"
 
+#include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/CastNode.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/PointerType.hpp"
-#include "Vypr/AST/Type/TypeException.hpp"
-#include "Vypr/AST/UnexpectedTokenException.hpp"
 
 namespace Vypr
 {
@@ -68,7 +67,7 @@ namespace Vypr
     type = m_lhs->type->Check(op, m_rhs->type.get());
     if (type == nullptr)
     {
-      throw TypeException("Invalid operands", column, line);
+      throw CompileError(CompileErrorId::InvalidOperands, column, line);
     }
     CastType();
   }
@@ -252,8 +251,8 @@ namespace Vypr
         lexer, symbolTable, BinaryOperationPrecedence.at(op));
     if (rhs == nullptr)
     {
-      throw UnexpectedTokenException("expression", opToken.column,
-                                     opToken.line);
+      throw CompileError(CompileErrorId::ExpectedExpression, opToken.column,
+                         opToken.line);
     }
 
     return std::make_unique<BinaryOpNode>(op, base, rhs, opToken.column,

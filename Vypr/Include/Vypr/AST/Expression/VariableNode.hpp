@@ -1,8 +1,8 @@
 #pragma once
 
+#include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
-#include "Vypr/AST/UnexpectedTokenException.hpp"
 
 namespace Vypr
 {
@@ -67,12 +67,19 @@ namespace Vypr
       CLangToken nextToken = lexer.GetToken();
       if (nextToken.type != CLangTokenType::Identifier)
       {
-        throw UnexpectedTokenException("symbol", nextToken.line,
-                                       nextToken.column);
+        throw CompileError(CompileErrorId::ExpectedIdentifier, nextToken.line,
+                           nextToken.column);
       }
 
-      std::unique_ptr<StorageType> symbolType =
-          symbolTable.GetSymbol(nextToken.content)->Clone();
+      std::shared_ptr<Vypr::StorageType> symbol =
+          symbolTable.GetSymbol(nextToken.content);
+      if (symbol == nullptr)
+      {
+        throw CompileError(CompileErrorId::UndefinedSymbol, nextToken.column,
+                           nextToken.line, nextToken.content);
+      }
+
+      std::unique_ptr<StorageType> symbolType = symbol->Clone();
 
       return std::make_unique<VariableNode>(symbolType, nextToken.content,
                                             nextToken.column, nextToken.line);

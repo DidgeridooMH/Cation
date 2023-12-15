@@ -2,10 +2,9 @@
 #include <llvm/Support/TargetSelect.h>
 #include <string>
 
+#include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
-#include "Vypr/AST/Type/TypeException.hpp"
-#include "Vypr/AST/UnexpectedTokenException.hpp"
 #include "Vypr/CodeGen/Context.hpp"
 #include "Vypr/Lexer/CLangLexer.hpp"
 #include "Vypr/Scanner/StringScanner.hpp"
@@ -31,7 +30,7 @@ int main(int, char **)
 
   // Temp
 
-  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"var == abc"));
+  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"var == dabc"));
 
   try
   {
@@ -60,21 +59,15 @@ int main(int, char **)
     // Temp
     context->builder.CreateRet(ret);
     // Temp
-  }
-  catch (Vypr::TypeException &e)
-  {
-    std::wcerr << L"TypeException: " << e.what() << " [" << e.column << ","
-               << e.line << "]" << std::endl;
-  }
-  catch (Vypr::UnexpectedTokenException &e)
-  {
-    std::wcerr << L"UnexpectedTokenException: " << e.what() << " [" << e.column
-               << "," << e.line << "]" << std::endl;
-  }
 
-  context->Verify();
-  context->PrettyPrint();
-  context->GenerateObjectFile("module.o");
+    context->Verify();
+    context->PrettyPrint();
+    context->GenerateObjectFile("module.o");
+  }
+  catch (Vypr::CompileError &e)
+  {
+    std::wcerr << e.what() << std::endl;
+  }
 
   return 0;
 }

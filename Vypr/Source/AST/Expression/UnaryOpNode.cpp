@@ -1,8 +1,8 @@
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
 
+#include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/CastNode.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
-#include "Vypr/AST/Type/TypeException.hpp"
 
 namespace Vypr
 {
@@ -35,7 +35,7 @@ namespace Vypr
     type = m_expression->type->Check(op);
     if (type == nullptr)
     {
-      throw TypeException("Invalid operands", column, line);
+      throw CompileError(CompileErrorId::InvalidOperands, column, line);
     }
 
     if (op == UnaryOp::LogicalNot &&

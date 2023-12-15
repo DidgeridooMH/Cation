@@ -1,6 +1,6 @@
 #include "Vypr/AST/Expression/PostfixOpNode.hpp"
 
-#include "Vypr/AST/Type/TypeException.hpp"
+#include "Vypr/AST/CompileError.hpp"
 
 namespace Vypr
 {
@@ -13,7 +13,7 @@ namespace Vypr
     type = m_expression->type->Check(op);
     if (type == nullptr)
     {
-      throw TypeException("Invalid operands", column, line);
+      throw CompileError(CompileErrorId::InvalidOperands, column, line);
     }
   }
 
