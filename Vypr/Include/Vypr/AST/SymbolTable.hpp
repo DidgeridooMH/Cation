@@ -15,6 +15,8 @@ namespace Vypr
 
     void PopScope();
 
+    bool IsDuplicate(const std::wstring &symbol) const;
+
     void AddSymbol(const std::wstring &symbol, T type);
 
     T GetSymbol(const std::wstring &symbol) const;

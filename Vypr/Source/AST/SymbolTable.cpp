@@ -1,6 +1,6 @@
 #include "Vypr/AST/SymbolTable.hpp"
 
-#include <llvm/IR/IRBuilder.h>
+#include "Vypr/AST/CompileError.hpp"
 
 namespace Vypr
 {
@@ -15,16 +15,17 @@ namespace Vypr
   }
 
   template <typename T>
+  bool SymbolTable<T>::IsDuplicate(const std::wstring &symbol) const
+  {
+    return m_tables.back().contains(symbol);
+  }
+
+  template <typename T>
   void SymbolTable<T>::AddSymbol(const std::wstring &symbol, T type)
   {
     if (!m_tables.back().contains(symbol))
     {
       m_tables.back().insert({symbol, std::move(type)});
-    }
-    else
-    {
-      // TODO: make an actual exception.
-      throw;
     }
   }
 
@@ -38,7 +39,7 @@ namespace Vypr
         return table->at(symbol);
       }
     }
-    return nullptr;
+    return {};
   }
 
   template <>
