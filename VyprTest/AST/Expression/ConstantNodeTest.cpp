@@ -516,13 +516,11 @@ namespace ConstantNodeTest
     llvm::Value *code = constant->GenerateCode(context);
 
     ASSERT_TRUE(code->getType()->isArrayTy());
-    ASSERT_TRUE(
-        code->getType()->getNonOpaquePointerElementType()->isIntegerTy());
+    ASSERT_TRUE(code->getType()->getArrayElementType()->isIntegerTy());
+    ASSERT_EQ(code->getType()->getArrayElementType()->getIntegerBitWidth(), 8);
     ASSERT_EQ(
-        code->getType()->getNonOpaquePointerElementType()->getIntegerBitWidth(),
-        8);
-    ASSERT_EQ(llvm::dyn_cast<llvm::ConstantDataSequential>(code)->getAsString(),
-              "");
+        llvm::cast<llvm::ConstantDataSequential>(code)->getAsCString().str(),
+        "");
   }
 
   TEST(GenerateCode, StringCommon)
@@ -536,12 +534,10 @@ namespace ConstantNodeTest
     llvm::Value *code = constant->GenerateCode(context);
 
     ASSERT_TRUE(code->getType()->isArrayTy());
-    ASSERT_TRUE(
-        code->getType()->getNonOpaquePointerElementType()->isIntegerTy());
+    ASSERT_TRUE(code->getType()->getArrayElementType()->isIntegerTy());
+    ASSERT_EQ(code->getType()->getArrayElementType()->getIntegerBitWidth(), 8);
     ASSERT_EQ(
-        code->getType()->getNonOpaquePointerElementType()->getIntegerBitWidth(),
-        8);
-    ASSERT_EQ(llvm::dyn_cast<llvm::ConstantDataSequential>(code)->getAsString(),
-              "Hello, world");
+        llvm::cast<llvm::ConstantDataSequential>(code)->getAsCString().str(),
+        "Hello, world");
   }
 } // namespace ConstantNodeTest

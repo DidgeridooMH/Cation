@@ -75,10 +75,13 @@ namespace Vypr
             return llvm::ConstantFP::get(
                 llvm::Type::getDoubleTy(context.context), constant);
           }
-          else
+          else if constexpr (std::is_same_v<T, std::string>)
           {
-            return nullptr;
+            return llvm::ConstantDataArray::getString(context.context, constant,
+                                                      true);
           }
+
+          return nullptr;
         },
         m_value);
   }

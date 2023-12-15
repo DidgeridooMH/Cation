@@ -55,7 +55,6 @@ namespace Vypr
     /// </returns>
     CLangToken GetToken();
 
-    // TODO: TEST
     /// <summary>
     /// Peek a token from the front of the stream. Whitespace is ignored and
     /// tokens are not parsed across vertical whitespace.
