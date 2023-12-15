@@ -77,8 +77,14 @@ namespace Vypr
           }
           else if constexpr (std::is_same_v<T, std::string>)
           {
-            return llvm::ConstantDataArray::getString(context.context, constant,
-                                                      true);
+            llvm::ArrayType *arrayType = llvm::ArrayType::get(
+                context.builder.getInt8Ty(), constant.length() + 1);
+            llvm::Constant *cString = llvm::ConstantDataArray::getString(
+                context.context, constant, true);
+            llvm::GlobalVariable *cStringGlobal = new llvm::GlobalVariable(
+                context.module, arrayType, true,
+                llvm::GlobalValue::InternalLinkage, cString);
+            return cStringGlobal;
           }
 
           return nullptr;

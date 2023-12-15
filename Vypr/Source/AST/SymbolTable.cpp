@@ -6,6 +6,11 @@
 
 namespace Vypr
 {
+  template <typename T> SymbolTable<T>::SymbolTable<T>()
+  {
+    m_tables.push_back({});
+  }
+
   template <typename T> void SymbolTable<T>::PushScope()
   {
     m_tables.push_back({});

@@ -16,7 +16,7 @@ namespace Vypr
 
     void PrettyPrint() const;
 
-    void Verify() const;
+    bool Verify() const;
 
     void GenerateObjectFile(const std::string &filename);
 

@@ -10,14 +10,11 @@
 #include <llvm/Target/TargetOptions.h>
 #include <llvm/TargetParser/Host.h>
 
-#include "Vypr/AST/SymbolTable.hpp"
-
 namespace Vypr
 {
   Context::Context(const std::string &name)
       : module(name, context), builder(context)
   {
-    symbolTable.PushScope();
   }
 
   void Context::PrettyPrint() const
@@ -25,9 +22,9 @@ namespace Vypr
     module.print(llvm::outs(), nullptr);
   }
 
-  void Context::Verify() const
+  bool Context::Verify() const
   {
-    llvm::verifyModule(module, &llvm::errs());
+    return !llvm::verifyModule(module, &llvm::errs());
   }
 
   void Context::GenerateObjectFile(const std::string &filename)

@@ -515,12 +515,12 @@ namespace ConstantNodeTest
 
     llvm::Value *code = constant->GenerateCode(context);
 
-    ASSERT_TRUE(code->getType()->isArrayTy());
-    ASSERT_TRUE(code->getType()->getArrayElementType()->isIntegerTy());
-    ASSERT_EQ(code->getType()->getArrayElementType()->getIntegerBitWidth(), 8);
-    ASSERT_EQ(
-        llvm::cast<llvm::ConstantDataSequential>(code)->getAsCString().str(),
-        "");
+    ASSERT_TRUE(code->getType()->isPointerTy());
+    ASSERT_EQ(llvm::cast<llvm::ConstantDataArray>(
+                  llvm::cast<llvm::GlobalVariable>(code)->getInitializer())
+                  ->getAsCString()
+                  .str(),
+              "");
   }
 
   TEST(GenerateCode, StringCommon)
@@ -533,11 +533,11 @@ namespace ConstantNodeTest
 
     llvm::Value *code = constant->GenerateCode(context);
 
-    ASSERT_TRUE(code->getType()->isArrayTy());
-    ASSERT_TRUE(code->getType()->getArrayElementType()->isIntegerTy());
-    ASSERT_EQ(code->getType()->getArrayElementType()->getIntegerBitWidth(), 8);
-    ASSERT_EQ(
-        llvm::cast<llvm::ConstantDataSequential>(code)->getAsCString().str(),
-        "Hello, world");
+    ASSERT_TRUE(code->getType()->isPointerTy());
+    ASSERT_EQ(llvm::cast<llvm::ConstantDataArray>(
+                  llvm::cast<llvm::GlobalVariable>(code)->getInitializer())
+                  ->getAsCString()
+                  .str(),
+              "Hello, world");
   }
 } // namespace ConstantNodeTest

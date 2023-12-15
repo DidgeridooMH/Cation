@@ -11,6 +11,8 @@ namespace Vypr
   template <typename T> class SymbolTable
   {
   public:
+    SymbolTable();
+
     void PushScope();
 
     void PopScope();

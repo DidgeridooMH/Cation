@@ -1,4 +1,5 @@
 #include <iostream>
+#include <llvm/IR/Verifier.h>
 #include <llvm/Support/TargetSelect.h>
 #include <string>
 
@@ -21,7 +22,8 @@ int main(int, char **)
 
   // Temp
   llvm::Function *function = llvm::Function::Create(
-      llvm::FunctionType::get(llvm::Type::getInt1Ty(context->context), false),
+      llvm::FunctionType::get(context->builder.getInt8Ty()->getPointerTo(),
+                              false),
       llvm::Function::ExternalLinkage, "TestFunction", context->module);
 
   llvm::BasicBlock *block =
@@ -30,26 +32,27 @@ int main(int, char **)
 
   // Temp
 
-  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"3.0f < 2.0f"));
+  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"\"hello\""));
 
   try
   {
     Vypr::TypeTable typeTable;
-    typeTable.PushScope();
-    typeTable.AddSymbol(L"var", std::make_shared<Vypr::IntegralType>(
-                                    Vypr::Integral::Bool, false, false, true));
-    typeTable.AddSymbol(L"abc", std::make_shared<Vypr::IntegralType>(
-                                    Vypr::Integral::Int, false, false, true));
+    // typeTable.AddSymbol(L"var", std::make_shared<Vypr::IntegralType>(
+    //                                 Vypr::Integral::Bool, false, false,
+    //                                 true));
+    // typeTable.AddSymbol(L"abc", std::make_shared<Vypr::IntegralType>(
+    //                                 Vypr::Integral::Int, false, false,
+    //                                 true));
 
-    llvm::AllocaInst *variable = context->builder.CreateAlloca(
-        context->builder.getInt1Ty(), nullptr, "var");
-    context->builder.CreateStore(context->builder.getInt1(true), variable);
-    context->symbolTable.AddSymbol(L"var", variable);
+    // llvm::AllocaInst *variable = context->builder.CreateAlloca(
+    //     context->builder.getInt1Ty(), nullptr, "var");
+    // context->builder.CreateStore(context->builder.getInt1(true), variable);
+    // context->symbolTable.AddSymbol(L"var", variable);
 
-    llvm::AllocaInst *abc = context->builder.CreateAlloca(
-        context->builder.getInt32Ty(), nullptr, "abc");
-    context->builder.CreateStore(context->builder.getInt32(32), abc);
-    context->symbolTable.AddSymbol(L"abc", abc);
+    // llvm::AllocaInst *abc = context->builder.CreateAlloca(
+    //     context->builder.getInt32Ty(), nullptr, "abc");
+    // context->builder.CreateStore(context->builder.getInt32(32), abc);
+    // context->symbolTable.AddSymbol(L"abc", abc);
 
     auto expression = Vypr::ExpressionNode::Parse(lexer, typeTable);
     std::wcout << expression->PrettyPrint(0) << std::endl;
@@ -60,9 +63,11 @@ int main(int, char **)
     context->builder.CreateRet(ret);
     // Temp
 
-    context->Verify();
-    context->PrettyPrint();
-    context->GenerateObjectFile("module.o");
+    if (!llvm::verifyFunction(*function) && context->Verify())
+    {
+      context->PrettyPrint();
+      context->GenerateObjectFile("module.o");
+    }
   }
   catch (Vypr::CompileError &e)
   {
