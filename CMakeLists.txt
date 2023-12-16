@@ -13,7 +13,7 @@ find_package(LLVM REQUIRED CONFIG)
 
 add_definitions(${LLVM_DEFINITIONS})
 
-if(${TARGET_ARCH} EQUAL "X86")
+if(TARGET_ARCH STREQUAL "AMD64")
   set(LLVM_COMPONENTS
   	core
   	support
