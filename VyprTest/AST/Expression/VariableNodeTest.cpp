@@ -85,4 +85,131 @@ namespace VariableNodeTest
     ASSERT_EQ(variable->type->isLValue, true);
     ASSERT_EQ(variable->type->isConst, false);
   }
+
+#define GENCODE_INT_TEST(typeName, bitWidth, testValue)                        \
+  TEST(GenerateCode, typeName##Variable)                                       \
+  {                                                                            \
+    Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));    \
+    Vypr::TypeTable typeTable;                                                 \
+    typeTable.AddSymbol(L"beta",                                               \
+                        std::make_shared<Vypr::IntegralType>(                  \
+                            Vypr::Integral::typeName, false, false, true));    \
+    Vypr::Context context("module");                                           \
+                                                                               \
+    llvm::Function *function = llvm::Function::Create(                         \
+        llvm::FunctionType::get(context.builder.getVoidTy(), false),           \
+        llvm::Function::ExternalLinkage, "TestFunction", context.module);      \
+    llvm::BasicBlock *block =                                                  \
+        llvm::BasicBlock::Create(context.context, "entry", function);          \
+    context.builder.SetInsertPoint(block);                                     \
+    llvm::AllocaInst *allocation = context.builder.CreateAlloca(               \
+        context.builder.getInt##bitWidth##Ty(), nullptr, "beta");              \
+    context.symbolTable.AddSymbol(L"beta", allocation);                        \
+    context.builder.CreateStore(context.builder.getInt##bitWidth##(testValue), \
+                                context.symbolTable.GetSymbol(L"beta"));       \
+                                                                               \
+    std::unique_ptr<Vypr::VariableNode> variable =                             \
+        Vypr::VariableNode::Parse(lexer, typeTable);                           \
+                                                                               \
+    llvm::Value *variableValue = variable->GenerateCode(context);              \
+                                                                               \
+    ASSERT_TRUE(variableValue->getType()->isIntegerTy(bitWidth));              \
+  }
+
+  GENCODE_INT_TEST(Bool, 1, true);
+  GENCODE_INT_TEST(Byte, 8, 14);
+  GENCODE_INT_TEST(Short, 16, 0x3444);
+  GENCODE_INT_TEST(Int, 32, 0x10000);
+  GENCODE_INT_TEST(Long, 64, 0x100000000);
+
+  TEST(GenerateCode, FloatVariable)
+  {
+    Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));
+    Vypr::TypeTable typeTable;
+    typeTable.AddSymbol(L"beta", std::make_shared<Vypr::RealType>(
+                                     Vypr::Real::Float, false, true));
+    Vypr::Context context("module");
+
+    llvm::Function *function = llvm::Function::Create(
+        llvm::FunctionType::get(context.builder.getVoidTy(), false),
+        llvm::Function::ExternalLinkage, "TestFunction", context.module);
+    llvm::BasicBlock *block =
+        llvm::BasicBlock::Create(context.context, "entry", function);
+    context.builder.SetInsertPoint(block);
+    llvm::AllocaInst *allocation = context.builder.CreateAlloca(
+        context.builder.getFloatTy(), nullptr, "beta");
+    context.symbolTable.AddSymbol(L"beta", allocation);
+    context.builder.CreateStore(
+        llvm::ConstantFP::get(llvm::Type::getFloatTy(context.context), 2.0f),
+        context.symbolTable.GetSymbol(L"beta"));
+
+    std::unique_ptr<Vypr::VariableNode> variable =
+        Vypr::VariableNode::Parse(lexer, typeTable);
+
+    llvm::Value *variableValue = variable->GenerateCode(context);
+
+    ASSERT_TRUE(variableValue->getType()->isFloatTy());
+  }
+
+  TEST(GenerateCode, DoubleVariable)
+  {
+    Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));
+    Vypr::TypeTable typeTable;
+    typeTable.AddSymbol(L"beta", std::make_shared<Vypr::RealType>(
+                                     Vypr::Real::Double, false, true));
+    Vypr::Context context("module");
+
+    llvm::Function *function = llvm::Function::Create(
+        llvm::FunctionType::get(context.builder.getVoidTy(), false),
+        llvm::Function::ExternalLinkage, "TestFunction", context.module);
+    llvm::BasicBlock *block =
+        llvm::BasicBlock::Create(context.context, "entry", function);
+    context.builder.SetInsertPoint(block);
+    llvm::AllocaInst *allocation = context.builder.CreateAlloca(
+        context.builder.getDoubleTy(), nullptr, "beta");
+    context.symbolTable.AddSymbol(L"beta", allocation);
+    context.builder.CreateStore(
+        llvm::ConstantFP::get(llvm::Type::getDoubleTy(context.context), 2.0),
+        context.symbolTable.GetSymbol(L"beta"));
+
+    std::unique_ptr<Vypr::VariableNode> variable =
+        Vypr::VariableNode::Parse(lexer, typeTable);
+
+    llvm::Value *variableValue = variable->GenerateCode(context);
+
+    ASSERT_TRUE(variableValue->getType()->isDoubleTy());
+  }
+
+  TEST(GenerateCode, PointerVariable)
+  {
+    Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));
+    Vypr::TypeTable typeTable;
+    std::unique_ptr<Vypr::StorageType> storage =
+        std::make_unique<Vypr::IntegralType>(Vypr::Integral::Int, false, false,
+                                             true);
+    typeTable.AddSymbol(
+        L"beta", std::make_shared<Vypr::PointerType>(storage, false, true));
+    Vypr::Context context("module");
+
+    llvm::Function *function = llvm::Function::Create(
+        llvm::FunctionType::get(context.builder.getVoidTy(), false),
+        llvm::Function::ExternalLinkage, "TestFunction", context.module);
+    llvm::BasicBlock *block =
+        llvm::BasicBlock::Create(context.context, "entry", function);
+    context.builder.SetInsertPoint(block);
+    llvm::AllocaInst *allocation = context.builder.CreateAlloca(
+        context.builder.getInt32Ty()->getPointerTo(), nullptr, "beta");
+    context.symbolTable.AddSymbol(L"beta", allocation);
+    context.builder.CreateStore(
+        llvm::ConstantPointerNull::get(
+            context.builder.getInt32Ty()->getPointerTo()),
+        context.symbolTable.GetSymbol(L"beta"));
+
+    std::unique_ptr<Vypr::VariableNode> variable =
+        Vypr::VariableNode::Parse(lexer, typeTable);
+
+    llvm::Value *variableValue = variable->GenerateCode(context);
+
+    ASSERT_TRUE(variableValue->getType()->isPointerTy());
+  }
 } // namespace VariableNodeTest
