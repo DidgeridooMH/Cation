@@ -66,7 +66,7 @@ namespace Vypr
         const CLangToken &token);
 
     static std::unique_ptr<ConstantNode> ParseStringLiteral(
-        const CLangToken &token);
+        const CLangToken &token, CLangLexer &lexer);
 
     ConstantValue m_value;
   };

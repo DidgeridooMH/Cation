@@ -111,7 +111,7 @@ namespace Vypr
           nextToken.column, nextToken.line);
     }
     case CLangTokenType::StringLiteral:
-      return ParseStringLiteral(nextToken);
+      return ParseStringLiteral(nextToken, lexer);
     default:
       throw CompileError(CompileErrorId::ExpectedConstant, nextToken.line,
                          nextToken.column);
@@ -277,10 +277,15 @@ namespace Vypr
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::ParseStringLiteral(
-      const CLangToken &token)
+      const CLangToken &token, CLangLexer &lexer)
   {
     std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
     std::string stringLiteral = converter.to_bytes(token.content);
+    while (lexer.PeekToken().type == CLangTokenType::StringLiteral)
+    {
+      CLangToken nextLiteral = lexer.GetToken();
+      stringLiteral += converter.to_bytes(nextLiteral.content);
+    }
 
     std::unique_ptr<StorageType> storageType =
         std::make_unique<IntegralType>(Integral::Byte, false, true, false);

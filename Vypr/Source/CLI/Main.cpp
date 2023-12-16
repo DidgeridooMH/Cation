@@ -32,7 +32,8 @@ int main(int, char **)
 
   // Temp
 
-  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"\"a\""));
+  Vypr::CLangLexer lexer(
+      std::make_unique<Vypr::StringScanner>(L"\"hello,\"\n\" world\""));
 
   try
   {

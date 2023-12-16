@@ -538,4 +538,22 @@ namespace ConstantNodeTest
                   .str(),
               "Hello, world");
   }
+
+  TEST(GenerateCode, StringConcat)
+  {
+    Vypr::CLangLexer lexer(
+        std::make_unique<Vypr::StringScanner>(L"\"Hello,\"\n\" world\""));
+    std::unique_ptr<Vypr::ConstantNode> constant =
+        Vypr::ConstantNode::Parse(lexer);
+    Vypr::Context context("TestModule");
+
+    llvm::Value *code = constant->GenerateCode(context);
+
+    ASSERT_TRUE(code->getType()->isPointerTy());
+    ASSERT_EQ(llvm::cast<llvm::ConstantDataArray>(
+                  llvm::cast<llvm::GlobalVariable>(code)->getInitializer())
+                  ->getAsCString()
+                  .str(),
+              "Hello, world");
+  }
 } // namespace ConstantNodeTest
