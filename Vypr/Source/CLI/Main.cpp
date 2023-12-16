@@ -22,7 +22,8 @@ int main(int, char **)
 
   // Temp
   llvm::Function *function = llvm::Function::Create(
-      llvm::FunctionType::get(context->builder.getInt32Ty(), false),
+      llvm::FunctionType::get(context->builder.getInt8Ty()->getPointerTo(),
+                              false),
       llvm::Function::ExternalLinkage, "TestFunction", context->module);
 
   llvm::BasicBlock *block =
@@ -31,7 +32,7 @@ int main(int, char **)
 
   // Temp
 
-  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"var + 1"));
+  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"\"a\""));
 
   try
   {
@@ -53,7 +54,7 @@ int main(int, char **)
     context->builder.CreateRet(ret);
     // Temp
 
-    if (!llvm::verifyFunction(*function) && context->Verify())
+    if (!llvm::verifyFunction(*function, &llvm::errs()) && context->Verify())
     {
       context->PrettyPrint();
       context->GenerateObjectFile("module.o");

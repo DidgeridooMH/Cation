@@ -161,52 +161,56 @@ namespace Vypr
     std::wstring constant =
         token.content.substr(prefix, token.content.length() - postfix - prefix);
 
-    std::unique_ptr<StorageType> constantType = std::make_unique<IntegralType>(
-        longCount < 2 ? Integral::Int : Integral::Long, isUnsigned, false,
-        false);
+    uint64_t proxyValue;
+    try
+    {
+      proxyValue = std::stoull(constant, nullptr, radix);
+    }
+    catch (...)
+    {
+      throw CompileError(CompileErrorId::ConstantTooLarge, token.column,
+                         token.line, token.content);
+    }
+
     bool valueParsed = false;
     ConstantValue value;
     while (!valueParsed)
     {
-      // TODO: Make a flag disabling constant conversion.
-      try
+      if (isUnsigned && longCount >= 2)
       {
-        if (isUnsigned && longCount < 2)
-        {
-          value = (uint32_t)std::stoul(constant, nullptr, radix);
-        }
-        else if (isUnsigned)
-        {
-          value = (uint64_t)std::stoull(constant, nullptr, radix);
-        }
-        else if (longCount < 2)
-        {
-          value = (int32_t)std::stol(constant, nullptr, radix);
-        }
-        else
-        {
-          value = (int64_t)std::stoll(constant, nullptr, radix);
-        }
-
+        value = proxyValue;
         valueParsed = true;
       }
-      catch (...)
+      else if (longCount >= 2 &&
+               proxyValue <= std::numeric_limits<int64_t>::max())
       {
-        if (longCount < 2)
-        {
-          longCount = 2;
-        }
-        else if (!isUnsigned)
-        {
-          isUnsigned = true;
-        }
-        else
-        {
-          throw CompileError(CompileErrorId::ConstantTooLarge, token.column,
-                             token.line, token.content);
-        }
+        value = static_cast<int64_t>(proxyValue);
+        valueParsed = true;
+      }
+      else if (isUnsigned && proxyValue <= std::numeric_limits<uint32_t>::max())
+      {
+        value = static_cast<uint32_t>(proxyValue);
+        valueParsed = true;
+      }
+      else if (proxyValue <= std::numeric_limits<int32_t>::max())
+      {
+        value = static_cast<int32_t>(proxyValue);
+        valueParsed = true;
+      }
+
+      if (!valueParsed && longCount < 2)
+      {
+        longCount = 2;
+      }
+      else if (!valueParsed)
+      {
+        isUnsigned = true;
       }
     }
+
+    std::unique_ptr<StorageType> constantType = std::make_unique<IntegralType>(
+        longCount < 2 ? Integral::Int : Integral::Long, isUnsigned, false,
+        false);
 
     return std::make_unique<ConstantNode>(constantType, value, token.column,
                                           token.line);

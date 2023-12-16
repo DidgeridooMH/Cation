@@ -516,11 +516,9 @@ namespace ConstantNodeTest
     llvm::Value *code = constant->GenerateCode(context);
 
     ASSERT_TRUE(code->getType()->isPointerTy());
-    ASSERT_EQ(llvm::cast<llvm::ConstantDataArray>(
-                  llvm::cast<llvm::GlobalVariable>(code)->getInitializer())
-                  ->getAsCString()
-                  .str(),
-              "");
+    ASSERT_TRUE(llvm::cast<llvm::GlobalVariable>(code)
+                    ->getInitializer()
+                    ->isZeroValue());
   }
 
   TEST(GenerateCode, StringCommon)
