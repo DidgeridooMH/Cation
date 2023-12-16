@@ -22,8 +22,7 @@ int main(int, char **)
 
   // Temp
   llvm::Function *function = llvm::Function::Create(
-      llvm::FunctionType::get(context->builder.getInt8Ty()->getPointerTo(),
-                              false),
+      llvm::FunctionType::get(context->builder.getInt32Ty(), false),
       llvm::Function::ExternalLinkage, "TestFunction", context->module);
 
   llvm::BasicBlock *block =
@@ -32,27 +31,18 @@ int main(int, char **)
 
   // Temp
 
-  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"\"hello\""));
+  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"var + 1"));
 
   try
   {
     Vypr::TypeTable typeTable;
-    // typeTable.AddSymbol(L"var", std::make_shared<Vypr::IntegralType>(
-    //                                 Vypr::Integral::Bool, false, false,
-    //                                 true));
-    // typeTable.AddSymbol(L"abc", std::make_shared<Vypr::IntegralType>(
-    //                                 Vypr::Integral::Int, false, false,
-    //                                 true));
+    typeTable.AddSymbol(L"var", std::make_shared<Vypr::IntegralType>(
+                                    Vypr::Integral::Int, false, false, true));
 
-    // llvm::AllocaInst *variable = context->builder.CreateAlloca(
-    //     context->builder.getInt1Ty(), nullptr, "var");
-    // context->builder.CreateStore(context->builder.getInt1(true), variable);
-    // context->symbolTable.AddSymbol(L"var", variable);
-
-    // llvm::AllocaInst *abc = context->builder.CreateAlloca(
-    //     context->builder.getInt32Ty(), nullptr, "abc");
-    // context->builder.CreateStore(context->builder.getInt32(32), abc);
-    // context->symbolTable.AddSymbol(L"abc", abc);
+    llvm::AllocaInst *variable = context->builder.CreateAlloca(
+        context->builder.getInt32Ty(), nullptr, "var");
+    context->builder.CreateStore(context->builder.getInt32(42), variable);
+    context->symbolTable.AddSymbol(L"var", variable);
 
     auto expression = Vypr::ExpressionNode::Parse(lexer, typeTable);
     std::wcout << expression->PrettyPrint(0) << std::endl;

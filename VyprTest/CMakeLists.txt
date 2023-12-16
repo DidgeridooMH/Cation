@@ -11,6 +11,7 @@ set(VYPR_TEST_SOURCE
   "Lexer/CLangLexerTest.cpp"
   "Scanner/StringScannerTest.cpp"
   "AST/Expression/ConstantNodeTest.cpp"
+  "AST/Expression/VariableNodeTest.cpp"
   "AST/Type/StorageTypeTest.cpp"
   "AST/Type/IntegralTypeTest.cpp"
 )
