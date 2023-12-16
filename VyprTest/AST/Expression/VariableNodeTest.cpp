@@ -105,7 +105,7 @@ namespace VariableNodeTest
     llvm::AllocaInst *allocation = context.builder.CreateAlloca(               \
         context.builder.getInt##bitWidth##Ty(), nullptr, "beta");              \
     context.symbolTable.AddSymbol(L"beta", allocation);                        \
-    context.builder.CreateStore(context.builder.getInt##bitWidth##(testValue), \
+    context.builder.CreateStore(context.builder.getInt##bitWidth(testValue),   \
                                 context.symbolTable.GetSymbol(L"beta"));       \
                                                                                \
     std::unique_ptr<Vypr::VariableNode> variable =                             \
