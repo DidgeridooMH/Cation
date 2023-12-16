@@ -1,5 +1,3 @@
-#pragma once
-
 #include "Vypr/CodeGen/Context.hpp"
 
 #include <llvm/IR/LegacyPassManager.h>

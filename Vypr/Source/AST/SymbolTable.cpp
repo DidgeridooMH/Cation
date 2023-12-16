@@ -6,7 +6,7 @@
 
 namespace Vypr
 {
-  template <typename T> SymbolTable<T>::SymbolTable<T>()
+  template <typename T> SymbolTable<T>::SymbolTable()
   {
     m_tables.push_back({});
   }

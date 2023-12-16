@@ -47,27 +47,9 @@ set(LIBVYPR_HEADER
   "Include/Vypr/Util/Overload.hpp"
 )
 
-set(VYPR_SOURCE
-  Source/CLI/Main.cpp
-)
-
-find_package(LLVM REQUIRED CONFIG)
-
 add_library(libvypr ${LIBVYPR_SOURCE} ${LIBVYPR_HEADER})
 
 target_include_directories(libvypr PUBLIC Include/ SYSTEM ${LLVM_INCLUDE_DIRS})
-add_definitions(${LLVM_DEFINITIONS})
-
-set(LLVM_COMPONENTS
-	core
-	support
-    x86codegen
-    x86desc
-    x86info
-    x86asmparser
-)
-
-llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_COMPONENTS})
 
 target_link_libraries(libvypr PUBLIC ${LLVM_LIBS})
 
@@ -75,6 +57,9 @@ if (NOT MSVC)
 target_compile_options(libvypr PRIVATE "-Wno-deprecated")
 endif ()
 
+set(VYPR_SOURCE
+  Source/CLI/Main.cpp
+)
 set(BUILD_SHARED_LIBS OFF)
 
 add_executable(vypr ${VYPR_SOURCE})

@@ -17,6 +17,7 @@ set(VYPR_TEST_SOURCE
 )
 
 add_executable(vyprtest ${VYPR_TEST_SOURCE})
+
 target_link_libraries(vyprtest libvypr GTest::gtest_main)
 
 include(GoogleTest)
