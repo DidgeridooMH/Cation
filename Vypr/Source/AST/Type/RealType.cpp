@@ -53,6 +53,8 @@ namespace Vypr
       resultType =
           std::make_unique<IntegralType>(Integral::Long, true, false, false);
       break;
+    default:
+      break;
     }
 
     return resultType;
@@ -81,6 +83,8 @@ namespace Vypr
     case BinaryOp::LogicalOr:
       resultType =
           std::make_unique<IntegralType>(Integral::Bool, false, false, false);
+      break;
+    default:
       break;
     }
 
