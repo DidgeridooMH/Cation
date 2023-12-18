@@ -14,6 +14,7 @@ set(VYPR_TEST_SOURCE
   "AST/Expression/VariableNodeTest.cpp"
   "AST/Type/StorageTypeTest.cpp"
   "AST/Type/IntegralTypeTest.cpp"
+  "AST/Type/PointerTypeTest.cpp"
 )
 
 add_executable(vyprtest ${VYPR_TEST_SOURCE})

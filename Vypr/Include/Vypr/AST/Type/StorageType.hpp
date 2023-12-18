@@ -32,7 +32,7 @@ namespace Vypr
     virtual std::unique_ptr<StorageType> Check(UnaryOp op) const;
 
     virtual std::unique_ptr<StorageType> Check(BinaryOp op,
-                                               const StorageType *other) const;
+                                               const StorageType &other) const;
 
     virtual std::wstring PrettyPrint() const;
 

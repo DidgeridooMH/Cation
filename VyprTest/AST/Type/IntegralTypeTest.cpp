@@ -4,7 +4,7 @@
 
 namespace IntegralTypeTest
 {
-  TEST(Construct, NotConstNotLValue)
+  TEST(IntegralTypeTestConstruct, NotConstNotLValue)
   {
     std::unique_ptr<Vypr::IntegralType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Bool, false, false,
@@ -15,7 +15,7 @@ namespace IntegralTypeTest
     ASSERT_EQ(type->isLValue, false);
   }
 
-  TEST(Construct, ConstNotLValue)
+  TEST(IntegralTypeTestConstruct, ConstNotLValue)
   {
     std::unique_ptr<Vypr::IntegralType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Bool, false, true,
@@ -26,7 +26,7 @@ namespace IntegralTypeTest
     ASSERT_EQ(type->isLValue, false);
   }
 
-  TEST(Construct, NotConstLValue)
+  TEST(IntegralTypeTestConstruct, NotConstLValue)
   {
     std::unique_ptr<Vypr::IntegralType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Bool, false, false,
@@ -37,7 +37,7 @@ namespace IntegralTypeTest
     ASSERT_EQ(type->isLValue, true);
   }
 
-  TEST(Construct, ConstLValue)
+  TEST(IntegralTypeTestConstruct, ConstLValue)
   {
     std::unique_ptr<Vypr::IntegralType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Bool, false, false,
@@ -48,7 +48,7 @@ namespace IntegralTypeTest
     ASSERT_EQ(type->isLValue, true);
   }
 
-  TEST(Construct, OtherIntegralType)
+  TEST(IntegralTypeTestConstruct, OtherIntegralType)
   {
     std::unique_ptr<Vypr::IntegralType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -59,7 +59,7 @@ namespace IntegralTypeTest
     ASSERT_EQ(type->isLValue, true);
   }
 
-  TEST(Clone, NotConstNotLValue)
+  TEST(IntegralTypeTestClone, NotConstNotLValue)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -74,7 +74,7 @@ namespace IntegralTypeTest
     ASSERT_FALSE(other->isLValue);
   }
 
-  TEST(CheckArithmetic, Void)
+  TEST(IntegralTypeTestCheckArithmetic, Void)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -83,12 +83,12 @@ namespace IntegralTypeTest
         std::make_unique<Vypr::StorageType>();
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::Add, other.get());
+        type->Check(Vypr::BinaryOp::Add, *other);
 
     ASSERT_EQ(result, nullptr);
   }
 
-  TEST(CheckArithmetic, IntegralLowerPriority)
+  TEST(IntegralTypeTestCheckArithmetic, IntegralLowerPriority)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -98,7 +98,7 @@ namespace IntegralTypeTest
                                              true);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::Add, other.get());
+        type->Check(Vypr::BinaryOp::Add, *other);
     Vypr::IntegralType *resultIntegral =
         dynamic_cast<Vypr::IntegralType *>(result.get());
 
@@ -108,7 +108,7 @@ namespace IntegralTypeTest
     ASSERT_FALSE(resultIntegral->isUnsigned);
   }
 
-  TEST(CheckArithmetic, IntegralHigherPriority)
+  TEST(IntegralTypeTestCheckArithmetic, IntegralHigherPriority)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Byte, false, false,
@@ -118,7 +118,7 @@ namespace IntegralTypeTest
                                              true);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::Add, other.get());
+        type->Check(Vypr::BinaryOp::Add, *other);
     Vypr::IntegralType *resultIntegral =
         dynamic_cast<Vypr::IntegralType *>(result.get());
 
@@ -128,7 +128,7 @@ namespace IntegralTypeTest
     ASSERT_FALSE(resultIntegral->isUnsigned);
   }
 
-  TEST(CheckArithmetic, IntegralEqualPriority)
+  TEST(IntegralTypeTestCheckArithmetic, IntegralEqualPriority)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Int, false, false,
@@ -138,7 +138,7 @@ namespace IntegralTypeTest
                                              true);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::Add, other.get());
+        type->Check(Vypr::BinaryOp::Add, *other);
     Vypr::IntegralType *resultIntegral =
         dynamic_cast<Vypr::IntegralType *>(result.get());
 
@@ -148,7 +148,7 @@ namespace IntegralTypeTest
     ASSERT_FALSE(resultIntegral->isUnsigned);
   }
 
-  TEST(CheckArithmetic, IntegralLowerPriorityUnsigned)
+  TEST(IntegralTypeTestCheckArithmetic, IntegralLowerPriorityUnsigned)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -158,7 +158,7 @@ namespace IntegralTypeTest
                                              true);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::Add, other.get());
+        type->Check(Vypr::BinaryOp::Add, *other);
     Vypr::IntegralType *resultIntegral =
         dynamic_cast<Vypr::IntegralType *>(result.get());
 
@@ -168,7 +168,7 @@ namespace IntegralTypeTest
     ASSERT_TRUE(resultIntegral->isUnsigned);
   }
 
-  TEST(CheckArithmetic, IntegralHigherPriorityUnsigned)
+  TEST(IntegralTypeTestCheckArithmetic, IntegralHigherPriorityUnsigned)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, true, false,
@@ -178,7 +178,7 @@ namespace IntegralTypeTest
                                              true);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::Add, other.get());
+        type->Check(Vypr::BinaryOp::Add, *other);
     Vypr::IntegralType *resultIntegral =
         dynamic_cast<Vypr::IntegralType *>(result.get());
 
@@ -188,7 +188,7 @@ namespace IntegralTypeTest
     ASSERT_TRUE(resultIntegral->isUnsigned);
   }
 
-  TEST(CheckBitwise, Real)
+  TEST(IntegralTypeTestCheckBitwise, Real)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -198,12 +198,12 @@ namespace IntegralTypeTest
                                             false);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::ShiftLeft, other.get());
+        type->Check(Vypr::BinaryOp::ShiftLeft, *other);
 
     ASSERT_EQ(result, nullptr);
   }
 
-  TEST(CheckBitwise, Pointer)
+  TEST(IntegralTypeTestCheckBitwise, Pointer)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -213,12 +213,12 @@ namespace IntegralTypeTest
                                             false, false);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::ShiftLeft, other.get());
+        type->Check(Vypr::BinaryOp::ShiftLeft, *other);
 
     ASSERT_EQ(result, nullptr);
   }
 
-  TEST(CheckBitwise, Array)
+  TEST(IntegralTypeTestCheckBitwise, Array)
   {
     std::unique_ptr<Vypr::StorageType> type =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Long, false, false,
@@ -228,7 +228,7 @@ namespace IntegralTypeTest
                                             false);
 
     std::unique_ptr<Vypr::StorageType> result =
-        type->Check(Vypr::BinaryOp::ShiftLeft, other.get());
+        type->Check(Vypr::BinaryOp::ShiftLeft, *other);
 
     ASSERT_EQ(result, nullptr);
   }

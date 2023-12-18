@@ -47,7 +47,7 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> ArrayType::Check(BinaryOp op,
-                                                const StorageType *other) const
+                                                const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
@@ -63,8 +63,11 @@ namespace Vypr
     case BinaryOp::GreaterEqual:
     case BinaryOp::Equal:
     case BinaryOp::NotEqual:
-      resultType = CheckComparison(op, other);
-      break;
+      if (other.GetType() == StorageMetaType::Void)
+      {
+        return nullptr;
+      }
+      [[fallthrough]];
     case BinaryOp::LogicalAnd:
     case BinaryOp::LogicalOr:
       resultType =
@@ -78,11 +81,11 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> ArrayType::CheckArithmetic(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
-    switch (other->GetType())
+    switch (other.GetType())
     {
     case StorageMetaType::Integral:
       resultType = Clone();
@@ -100,16 +103,6 @@ namespace Vypr
     }
 
     return resultType;
-  }
-
-  std::unique_ptr<StorageType> ArrayType::CheckComparison(
-      BinaryOp op, const StorageType *other) const
-  {
-    if (other->GetType() == StorageMetaType::Void)
-    {
-      return nullptr;
-    }
-    return std::make_unique<IntegralType>(Integral::Bool, false, false, false);
   }
 
   std::wstring ArrayType::PrettyPrint() const

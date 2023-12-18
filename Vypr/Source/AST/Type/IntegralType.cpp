@@ -71,7 +71,7 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> IntegralType::Check(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
@@ -114,31 +114,31 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> IntegralType::CheckArithmetic(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
-    switch (other->GetType())
+    switch (other.GetType())
     {
     case StorageMetaType::Integral:
       resultType =
-          integral >= dynamic_cast<const IntegralType *>(other)->integral
+          integral >= dynamic_cast<const IntegralType *>(&other)->integral
               ? Clone()
-              : other->Clone();
+              : other.Clone();
       dynamic_cast<IntegralType *>(resultType.get())->isUnsigned =
-          isUnsigned || dynamic_cast<const IntegralType *>(other)->isUnsigned;
+          isUnsigned || dynamic_cast<const IntegralType *>(&other)->isUnsigned;
       break;
     case StorageMetaType::Real:
       if (op != BinaryOp::Modulo)
       {
-        resultType = other->Clone();
+        resultType = other.Clone();
       }
       break;
     case StorageMetaType::Pointer:
     case StorageMetaType::Array:
       if (op == BinaryOp::Add)
       {
-        resultType = other->Clone();
+        resultType = other.Clone();
       }
       break;
     default:
@@ -149,9 +149,9 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> IntegralType::CheckBitwise(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
-    if (other->GetType() != StorageMetaType::Integral)
+    if (other.GetType() != StorageMetaType::Integral)
     {
       return nullptr;
     }
@@ -168,11 +168,11 @@ namespace Vypr
     case BinaryOp::Xor:
     case BinaryOp::Or:
       resultType =
-          integral >= dynamic_cast<const IntegralType *>(other)->integral
+          integral >= dynamic_cast<const IntegralType *>(&other)->integral
               ? Clone()
-              : other->Clone();
+              : other.Clone();
       dynamic_cast<IntegralType *>(resultType.get())->isUnsigned =
-          isUnsigned || dynamic_cast<const IntegralType *>(other)->isUnsigned;
+          isUnsigned || dynamic_cast<const IntegralType *>(&other)->isUnsigned;
       break;
     default:
       break;

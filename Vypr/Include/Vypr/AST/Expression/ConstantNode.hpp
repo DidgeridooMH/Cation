@@ -8,11 +8,18 @@
 
 namespace Vypr
 {
+  /// <summary>
+  /// Union of all possible constant types.
+  /// </summary>
   using ConstantValue = std::variant<int32_t, int64_t, uint8_t, uint32_t,
                                      uint64_t, float, double, std::string>;
 
   class CLangLexer;
   class CLangToken;
+  /// <summary>
+  /// Parse-tree node that denotes a numeric constant, string literal, or
+  /// character literal.
+  /// </summary>
   class ConstantNode : public ExpressionNode
   {
   public:

@@ -27,7 +27,7 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> StorageType::Check(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
     return nullptr;
   };

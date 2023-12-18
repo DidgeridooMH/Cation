@@ -64,7 +64,7 @@ namespace Vypr
       : ExpressionNode(nullptr, column, line), m_op(op), m_lhs(std::move(lhs)),
         m_rhs(std::move(rhs))
   {
-    type = m_lhs->type->Check(op, m_rhs->type.get());
+    type = m_lhs->type->Check(op, *m_rhs->type);
     if (type == nullptr)
     {
       throw CompileError(CompileErrorId::InvalidOperands, column, line);

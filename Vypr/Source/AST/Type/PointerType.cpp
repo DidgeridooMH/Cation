@@ -40,9 +40,13 @@ namespace Vypr
           std::make_unique<IntegralType>(Integral::Bool, false, false, false);
       break;
     case UnaryOp::Deref:
-      resultType = m_storage->Clone();
-      resultType->isConst = m_storage->isConst;
-      resultType->isLValue = true;
+      // TODO: This will change to a nullptr check later.
+      if (m_storage->GetType() != StorageMetaType::Void)
+      {
+        resultType = m_storage->Clone();
+        resultType->isConst = m_storage->isConst;
+        resultType->isLValue = true;
+      }
       break;
     case UnaryOp::AddressOf:
       resultType = Clone();
@@ -60,7 +64,7 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> PointerType::Check(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
@@ -76,11 +80,16 @@ namespace Vypr
     case BinaryOp::GreaterEqual:
     case BinaryOp::Equal:
     case BinaryOp::NotEqual:
-      resultType = CheckComparison(op, other);
-      break;
+      if (other.GetType() != StorageMetaType::Pointer &&
+          other.GetType() != StorageMetaType::Array)
+      {
+        break;
+      }
+      [[fallthrough]];
     case BinaryOp::LogicalAnd:
     case BinaryOp::LogicalOr:
-      resultType = CheckLogic(op, other);
+      resultType =
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
       break;
     default:
       break;
@@ -99,11 +108,11 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> PointerType::CheckArithmetic(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
-    switch (other->GetType())
+    switch (other.GetType())
     {
     case StorageMetaType::Integral:
       resultType = Clone();
@@ -121,21 +130,5 @@ namespace Vypr
     }
 
     return resultType;
-  }
-
-  std::unique_ptr<StorageType> PointerType::CheckComparison(
-      BinaryOp op, const StorageType *other) const
-  {
-    if (other->GetType() == StorageMetaType::Void)
-    {
-      return nullptr;
-    }
-    return std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-  }
-
-  std::unique_ptr<StorageType> PointerType::CheckLogic(
-      BinaryOp op, const StorageType *other) const
-  {
-    return std::make_unique<IntegralType>(Integral::Bool, false, false, false);
   }
 } // namespace Vypr

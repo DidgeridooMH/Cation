@@ -59,7 +59,7 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> RealType::Check(BinaryOp op,
-                                               const StorageType *other) const
+                                               const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
@@ -94,19 +94,19 @@ namespace Vypr
   }
 
   std::unique_ptr<StorageType> RealType::CheckArithmetic(
-      BinaryOp op, const StorageType *other) const
+      BinaryOp op, const StorageType &other) const
   {
     std::unique_ptr<StorageType> resultType;
 
-    switch (other->GetType())
+    switch (other.GetType())
     {
     case StorageMetaType::Integral:
       resultType = Clone();
       break;
     case StorageMetaType::Real:
-      resultType = real >= dynamic_cast<const RealType *>(other)->real
+      resultType = real >= dynamic_cast<const RealType *>(&other)->real
                        ? Clone()
-                       : other->Clone();
+                       : other.Clone();
       break;
     default:
       break;
