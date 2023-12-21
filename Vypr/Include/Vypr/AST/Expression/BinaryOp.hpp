@@ -2,6 +2,7 @@
 
 namespace Vypr
 {
+  /// @brief Binary operations.
   enum class BinaryOp
   {
     Add,

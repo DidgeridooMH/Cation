@@ -2,9 +2,7 @@
 
 namespace Vypr
 {
-  /// <summary>
-  /// Token types for the C language grammar.
-  /// </summary>
+  /// @brief Token types for the C language grammar.
   enum class CLangTokenType
   {
     NoToken,

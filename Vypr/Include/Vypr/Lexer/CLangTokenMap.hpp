@@ -7,18 +7,12 @@
 
 namespace Vypr
 {
-  /// <summary>
-  /// Helper for mapping strings to their token types.
-  /// </summary>
+  /// @brief Helper for mapping strings to their token types.
   using CLangTokenMap = std::unordered_map<std::wstring, CLangTokenType>;
 
-  /// <summary>
-  /// Map keyword token types using their string values.
-  /// </summary>
+  /// @brief Map keyword token types using their string values.
   extern const CLangTokenMap KeywordMap;
 
-  /// <summary>
-  /// Map punctuation token types using their string values.
-  /// </summary>
+  /// @brief Map punctuation token types using their string values.
   extern const CLangTokenMap PunctuatorMap;
 } // namespace Vypr

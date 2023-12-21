@@ -6,31 +6,43 @@
 
 namespace Vypr
 {
-  /// <summary>
-  /// Type that denotes a pointer to another storage type. The stored type can
-  /// be any of the derivations of <c>StorageType</c>.
-  /// </summary>
+  /// @brief Type that denotes a pointer to another storage type. The stored
+  /// type can be any of the derivations of `StorageType`.
   class PointerType : public StorageType
   {
   public:
-    /// <summary>
-    /// Constructs a type that points to another type.
-    /// </summary>
-    /// <param name="storage">Type pointed to by this pointer type.</param>
-    /// <param name="isConst">True if constant, false otherwise.</param>
-    /// <param name="isLValue">True if L-Value, false otherwise.</param>
+    /// @brief Constructs a type that points to another type.
+    ///
+    /// @param storage Type pointed to by this pointer type.
+    /// @param isConst True if constant, false otherwise.
+    /// @param isLValue True if L-Value, false otherwise.
     PointerType(std::unique_ptr<StorageType> &storage, bool isConst,
                 bool isLValue);
 
+    /// @brief Creates a copy of the pointer type.
+    /// @return A deep copy of the pointer type with `isLValue` flag not set.
     std::unique_ptr<StorageType> Clone() const override;
 
+    /// @brief Checks if a postfix operation is valid on the current type.
+    /// @param op Postfix operation to check.
+    /// @return Type of the result of the postfix operation.
     std::unique_ptr<StorageType> Check(PostfixOp op) const override;
 
+    /// @brief Checks if a unary operation is valid on the current type.
+    /// @param op Unary operation to check.
+    /// @return Type of the result of the unary operation.
     std::unique_ptr<StorageType> Check(UnaryOp op) const override;
 
+    /// @brief Checks if a binary operation is valid on the current type and
+    /// operand.
+    /// @param op Binary operation to check.
+    /// @param other Operand to check on right side of binary operation.
+    /// @return Type of the result of the binary operation.
     std::unique_ptr<StorageType> Check(BinaryOp op,
                                        const StorageType &other) const override;
 
+    /// @brief Print the type in a readable format.
+    /// @return Wide string containing the readable type.
     std::wstring PrettyPrint() const override;
 
   private:

@@ -7,16 +7,20 @@ namespace Vypr
   class StringScanner : public Scanner
   {
   public:
-    /// <summary>
-    /// Constructs a scanner from the source string. The string is copied to an
-    /// internal buffer.
-    /// </summary>
-    /// <param name="source">
-    /// String to retrieve characters from.
-    /// </param>
+    /// @brief Constructs a scanner from the source string. The string is copied
+    /// to an internal buffer.
+    ///
+    /// @param source String to retrieve characters from.
     StringScanner(std::wstring source = L"");
 
-    wchar_t LookAhead(int stepSize) const override;
+    /// @brief Peeks the next character from the scanner source or `EOF` if
+    /// the source is empty.
+    ///
+    /// @param offsetNumber of characters to skip when looking ahead.
+    /// @returns `offset`th character in the scanner source.
+    wchar_t LookAhead(int offset) const override;
+
+    /// @returns Whether more characters are available from the scanner source.
     bool Finished() override;
 
   protected:
