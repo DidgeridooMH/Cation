@@ -62,6 +62,11 @@ namespace Vypr
     /// @return Wide string containing the readable type.
     std::wstring PrettyPrint() const override;
 
+    /// @brief Retrieve the mapping between the LLVM IR type and the current
+    /// `integral`.
+    /// @return An LLVM IR type associated with the integral type.
+    llvm::Type *GetIRType(Context &context) const override;
+
     /// @brief Size of the integer.
     Integral integral;
 

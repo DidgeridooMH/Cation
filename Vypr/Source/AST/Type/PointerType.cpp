@@ -131,4 +131,19 @@ namespace Vypr
 
     return resultType;
   }
+
+  llvm::Type *PointerType::GetIRType(Context &context) const
+  {
+    llvm::Type *result;
+    if (m_storage != nullptr)
+    {
+      llvm::Type *storageType = m_storage->GetIRType(context);
+      result = storageType->getPointerTo();
+    }
+    else
+    {
+      result = context.builder.getPtrTy();
+    }
+    return result;
+  }
 } // namespace Vypr

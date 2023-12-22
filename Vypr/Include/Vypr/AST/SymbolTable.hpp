@@ -4,8 +4,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "Vypr/AST/Type/StorageType.hpp"
-
 namespace Vypr
 {
   template <typename T> class SymbolTable
@@ -27,5 +25,6 @@ namespace Vypr
     std::vector<std::unordered_map<std::wstring, T>> m_tables;
   };
 
+  class StorageType;
   using TypeTable = SymbolTable<std::shared_ptr<StorageType>>;
 } // namespace Vypr

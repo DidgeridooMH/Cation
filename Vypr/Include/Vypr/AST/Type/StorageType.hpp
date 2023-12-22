@@ -1,11 +1,13 @@
 #pragma once
 
+#include <llvm/IR/Type.h>
 #include <memory>
 #include <string>
 
 #include "Vypr/AST/Expression/BinaryOp.hpp"
 #include "Vypr/AST/Expression/PostfixOp.hpp"
 #include "Vypr/AST/Expression/UnaryOp.hpp"
+#include "Vypr/CodeGen/Context.hpp"
 
 namespace Vypr
 {
@@ -20,6 +22,15 @@ namespace Vypr
     Array
   };
 
+  /// @brief AST type that represents the type of a temporary value or a value
+  /// in memory.
+  ///
+  /// This class is not to be used directly, but its derivations define its
+  /// behavior. What derivation is stored is defined by the `StorageMetaType`
+  /// that is set.
+  ///
+  /// @todo Make this an abstract class and make `void` be represented by a
+  /// `nullptr`.
   class StorageType
   {
   public:
@@ -60,9 +71,24 @@ namespace Vypr
     /// @return Wide string containing the readable type.
     virtual std::wstring PrettyPrint() const;
 
+    /// @brief Get the type used in the IR structure.
+    /// @param context Current IR context for symbol storage and code gen.
+    /// @return IR type mapped to the current AST type.
+    /// @todo Remove default implementation.
+    virtual llvm::Type *GetIRType(Context &context) const
+    {
+      return nullptr;
+    }
+
+    /// @brief Get the type of type that is stored.
+    /// @return The meta type of the type stored.
     StorageMetaType GetType() const;
 
+    /// @brief Whether the current value is modifiable.
     bool isConst;
+
+    /// @brief Whether the current value points to a place in memory that is
+    /// storable.
     bool isLValue;
 
   private:

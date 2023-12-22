@@ -3,6 +3,7 @@
 #include <llvm/IR/Instructions.h>
 
 #include "Vypr/AST/CompileError.hpp"
+#include "Vypr/AST/Type/StorageType.hpp"
 
 namespace Vypr
 {

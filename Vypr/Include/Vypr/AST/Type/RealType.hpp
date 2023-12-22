@@ -26,6 +26,8 @@ namespace Vypr
     std::unique_ptr<StorageType> Check(BinaryOp op,
                                        const StorageType &other) const override;
 
+    llvm::Type *GetIRType(Context &context) const override;
+
     std::wstring PrettyPrint() const override;
 
     Real real;

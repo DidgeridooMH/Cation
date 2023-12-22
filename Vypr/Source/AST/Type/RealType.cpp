@@ -119,6 +119,15 @@ namespace Vypr
     return resultType;
   }
 
+  llvm::Type *RealType::GetIRType(Context &context) const
+  {
+    if (real == Real::Float)
+    {
+      return context.builder.getFloatTy();
+    }
+    return context.builder.getDoubleTy();
+  }
+
   std::wstring RealType::PrettyPrint() const
   {
     std::wstring result = StorageType::PrettyPrint();

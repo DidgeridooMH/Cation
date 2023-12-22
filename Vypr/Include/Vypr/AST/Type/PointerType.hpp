@@ -41,6 +41,11 @@ namespace Vypr
     std::unique_ptr<StorageType> Check(BinaryOp op,
                                        const StorageType &other) const override;
 
+    /// @brief Retrieve the mapping between the LLVM IR type and the current
+    /// pointer to a storage type.
+    /// @return An LLVM IR type associated with the pointer to storage type.
+    llvm::Type *GetIRType(Context &context) const override;
+
     /// @brief Print the type in a readable format.
     /// @return Wide string containing the readable type.
     std::wstring PrettyPrint() const override;

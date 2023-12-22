@@ -40,40 +40,22 @@ namespace Vypr
     return std::visit(
         [&](const auto &constant) -> llvm::Value * {
           using T = std::decay_t<decltype(constant)>;
-          if constexpr (std::is_same_v<T, int32_t>)
+          if constexpr (std::is_same_v<T, int32_t> ||
+                        std::is_same_v<T, int64_t>)
           {
-            return llvm::ConstantInt::get(
-                llvm::Type::getInt32Ty(context.context), constant, true);
+            return llvm::ConstantInt::get(type->GetIRType(context), constant,
+                                          true);
           }
-          else if constexpr (std::is_same_v<T, int64_t>)
+          else if constexpr (std::is_same_v<T, uint8_t> ||
+                             std::is_same_v<T, uint32_t> ||
+                             std::is_same_v<T, uint64_t>)
           {
-            return llvm::ConstantInt::get(
-                llvm::Type::getInt64Ty(context.context), constant, true);
+            return llvm::ConstantInt::get(type->GetIRType(context), constant);
           }
-          else if constexpr (std::is_same_v<T, uint8_t>)
+          else if constexpr (std::is_same_v<T, float> ||
+                             std::is_same_v<T, double>)
           {
-            return llvm::ConstantInt::get(
-                llvm::Type::getInt8Ty(context.context), constant, false);
-          }
-          else if constexpr (std::is_same_v<T, uint32_t>)
-          {
-            return llvm::ConstantInt::get(
-                llvm::Type::getInt32Ty(context.context), constant, false);
-          }
-          else if constexpr (std::is_same_v<T, uint64_t>)
-          {
-            return llvm::ConstantInt::get(
-                llvm::Type::getInt64Ty(context.context), constant, false);
-          }
-          else if constexpr (std::is_same_v<T, float>)
-          {
-            return llvm::ConstantFP::get(
-                llvm::Type::getFloatTy(context.context), constant);
-          }
-          else if constexpr (std::is_same_v<T, double>)
-          {
-            return llvm::ConstantFP::get(
-                llvm::Type::getDoubleTy(context.context), constant);
+            return llvm::ConstantFP::get(type->GetIRType(context), constant);
           }
           else if constexpr (std::is_same_v<T, std::string>)
           {

@@ -47,17 +47,19 @@ namespace Vypr
     case StorageMetaType::Integral:
       result = CastIntegralToIntegral(context, childExpression);
       break;
-    case StorageMetaType::Pointer:
-      // TODO: After adding variable node.
-      break;
     case StorageMetaType::Array:
-      // TODO: Throw an error.
+      // TODO: Check if this is correct. I'm not certain how array types are
+      // implemented yet.
+      [[fallthrough]];
+    case StorageMetaType::Pointer:
+      result = context.builder.CreatePtrToInt(childExpression,
+                                              context.builder.getInt64Ty());
       break;
     case StorageMetaType::Real:
-      // TODO
       break;
     default:
-      // TODO:
+      // TODO: Void is not checked here as the implementation will change at
+      // some point.
       break;
     }
 
@@ -67,13 +69,6 @@ namespace Vypr
   llvm::Value *CastNode::CastIntegralToIntegral(
       Context &context, llvm::Value *childExpression) const
   {
-    static const std::unordered_map<Integral,
-                                    llvm::IntegerType *(llvm::IRBuilder<>::*)()>
-        TypeBuilders = {{Integral::Byte, &llvm::IRBuilder<>::getInt8Ty},
-                        {Integral::Short, &llvm::IRBuilder<>::getInt16Ty},
-                        {Integral::Int, &llvm::IRBuilder<>::getInt32Ty},
-                        {Integral::Long, &llvm::IRBuilder<>::getInt64Ty}};
-
     auto integralType = dynamic_cast<IntegralType *>(type.get());
     auto expressionType = dynamic_cast<IntegralType *>(expression->type.get());
 
@@ -86,15 +81,13 @@ namespace Vypr
     }
     else if (integralType->isUnsigned)
     {
-      result = context.builder.CreateZExtOrTrunc(
-          childExpression,
-          (context.builder.*(TypeBuilders.at(integralType->integral)))());
+      result = context.builder.CreateZExtOrTrunc(childExpression,
+                                                 type->GetIRType(context));
     }
     else
     {
-      result = context.builder.CreateSExtOrTrunc(
-          childExpression,
-          (context.builder.*(TypeBuilders.at(integralType->integral)))());
+      result = context.builder.CreateSExtOrTrunc(childExpression,
+                                                 type->GetIRType(context));
     }
     return result;
   }

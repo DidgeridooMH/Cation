@@ -181,6 +181,18 @@ namespace Vypr
     return resultType;
   }
 
+  llvm::Type *IntegralType::GetIRType(Context &context) const
+  {
+    static const std::unordered_map<Integral,
+                                    llvm::IntegerType *(llvm::IRBuilder<>::*)()>
+        TypeBuilders = {{Integral::Byte, &llvm::IRBuilder<>::getInt8Ty},
+                        {Integral::Short, &llvm::IRBuilder<>::getInt16Ty},
+                        {Integral::Int, &llvm::IRBuilder<>::getInt32Ty},
+                        {Integral::Long, &llvm::IRBuilder<>::getInt64Ty}};
+
+    return (context.builder.*(TypeBuilders.at(integral)))();
+  }
+
   std::wstring IntegralType::PrettyPrint() const
   {
     static const std::unordered_map<Integral, std::wstring> PrimitiveTypeNames =
