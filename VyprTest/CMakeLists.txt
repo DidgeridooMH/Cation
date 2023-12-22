@@ -18,8 +18,16 @@ set(VYPR_TEST_SOURCE
 )
 
 add_executable(vyprtest ${VYPR_TEST_SOURCE})
-
 target_link_libraries(vyprtest libvypr GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(vyprtest)
+
+if (ENABLE_COVERAGE)
+  set(COVERAGE_EXCLUDES "build/" "VyprTest/" "Vypr/Include/")
+  setup_target_for_coverage_gcovr_html(
+    NAME coverage
+    EXECUTABLE ctest -j ${n_cores}
+    DEPENDENCIES vyprtest
+  )
+endif (ENABLE_COVERAGE)

@@ -4,8 +4,16 @@ enable_testing()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 set(TARGET_ARCH "${CMAKE_HOST_SYSTEM_PROCESSOR}" CACHE STRING "Architecture to build compiler for.")
+set(ENABLE_COVERAGE false CACHE BOOL "Enable code coverage profiles.")
+
+if (ENABLE_COVERAGE)
+  message("Code coverage enabled.")
+  include(CodeCoverage)
+  append_coverage_compiler_flags()
+endif (ENABLE_COVERAGE)
 
 message("Setting compiler architecture to ${TARGET_ARCH}")
 
