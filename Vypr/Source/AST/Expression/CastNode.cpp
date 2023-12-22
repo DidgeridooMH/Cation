@@ -29,45 +29,42 @@ namespace Vypr
     switch (type->GetType())
     {
     case StorageMetaType::Integral:
-      resultValue = CastToIntegral(context, resultValue);
-      break;
+      return CastToIntegral(context, resultValue);
     case StorageMetaType::Real:
-      resultValue = CastToReal(context, resultValue);
+      return CastToReal(context, resultValue);
+    case StorageMetaType::Pointer:
+      return CastToPointer(context, resultValue);
     default:
-      // TODO:
       break;
     }
 
-    return resultValue;
+    throw CompileError(CompileErrorId::InvalidCast, 0, 0);
   }
 
   llvm::Value *CastNode::CastToIntegral(Context &context,
                                         llvm::Value *childExpression) const
   {
-    llvm::Value *result = childExpression;
-
     switch (expression->type->GetType())
     {
     case StorageMetaType::Integral:
-      result = CastIntegralToIntegral(context, childExpression);
-      break;
-    case StorageMetaType::Array:
-      // TODO: Check if this is correct. I'm not certain how array types are
-      // implemented yet.
-      [[fallthrough]];
+      return CastIntegralToIntegral(context, childExpression);
     case StorageMetaType::Pointer:
-      result = context.builder.CreatePtrToInt(childExpression,
-                                              context.builder.getInt64Ty());
-      break;
+      if (dynamic_cast<IntegralType *>(type.get())->integral != Integral::Long)
+      {
+        throw CompileError(CompileErrorId::InvalidCast, 0, 0);
+      }
+      return context.builder.CreatePtrToInt(childExpression,
+                                            type->GetIRType(context));
     case StorageMetaType::Real:
-      [[fallthrough]];
+      return context.builder.CreateFPCast(childExpression,
+                                          type->GetIRType(context));
     default:
       // TODO: Void is not checked here as the implementation will change at
       // some point.
-      throw CompileError(CompileErrorId::UnimplementedFeature, 0, 0);
+      break;
     }
 
-    return result;
+    throw CompileError(CompileErrorId::UnimplementedFeature, 0, 0);
   }
 
   llvm::Value *CastNode::CastToReal(Context &context,
@@ -97,29 +94,36 @@ namespace Vypr
     }
   }
 
+  llvm::Value *CastNode::CastToPointer(Context &context,
+                                       llvm::Value *childExpression) const
+  {
+    if (expression->type->GetType() != StorageMetaType::Integral ||
+        dynamic_cast<IntegralType *>(expression->type.get())->integral !=
+            Integral::Long)
+    {
+      throw CompileError(CompileErrorId::InvalidCast, 0, 0);
+    }
+
+    return context.builder.CreateIntToPtr(childExpression,
+                                          type->GetIRType(context));
+  }
+
   llvm::Value *CastNode::CastIntegralToIntegral(
       Context &context, llvm::Value *childExpression) const
   {
     auto integralType = dynamic_cast<IntegralType *>(type.get());
-    auto expressionType = dynamic_cast<IntegralType *>(expression->type.get());
-
-    llvm::Value *result = childExpression;
     if (integralType->integral == Integral::Bool)
     {
-      result = context.builder.CreateICmpNE(
+      return context.builder.CreateICmpNE(
           childExpression,
           llvm::ConstantInt::get(context.builder.getInt1Ty(), 0));
     }
     else if (integralType->isUnsigned)
     {
-      result = context.builder.CreateZExtOrTrunc(childExpression,
-                                                 type->GetIRType(context));
+      return context.builder.CreateZExtOrTrunc(childExpression,
+                                               type->GetIRType(context));
     }
-    else
-    {
-      result = context.builder.CreateSExtOrTrunc(childExpression,
-                                                 type->GetIRType(context));
-    }
-    return result;
+    return context.builder.CreateSExtOrTrunc(childExpression,
+                                             type->GetIRType(context));
   }
 } // namespace Vypr
