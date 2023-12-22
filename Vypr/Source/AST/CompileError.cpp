@@ -49,6 +49,10 @@ namespace Vypr
       return L"Invalid operands";
     case CompileErrorId::ConstantTooLarge:
       return L"Constant is too large";
+    case CompileErrorId::UnimplementedFeature:
+      return L"Unimplemented feature";
+    case CompileErrorId::InvalidCast:
+      return L"Cast is invalid";
     }
 
     return L"Unknown error";

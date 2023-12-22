@@ -1,6 +1,6 @@
 #include "Vypr/AST/SymbolTable.hpp"
 
-#include <llvm/IR/Instructions.h>
+#include <llvm/IR/Value.h>
 
 #include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Type/StorageType.hpp"
@@ -65,5 +65,5 @@ namespace Vypr
   }
 
   template class SymbolTable<std::shared_ptr<StorageType>>;
-  template class SymbolTable<llvm::AllocaInst *>;
+  template class SymbolTable<llvm::Value *>;
 } // namespace Vypr

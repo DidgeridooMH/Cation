@@ -4,6 +4,7 @@
 #include "Vypr/AST/Expression/CastNode.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/PointerType.hpp"
+#include "Vypr/AST/Type/RealType.hpp"
 
 namespace Vypr
 {
@@ -148,6 +149,24 @@ namespace Vypr
     }
   }
 
+  void BinaryOpNode::CastTypeReal()
+  {
+    if (m_rhs->type->GetType() != StorageMetaType::Real ||
+        (dynamic_cast<RealType *>(m_lhs.get())->real >
+         dynamic_cast<RealType *>(m_rhs.get())->real))
+    {
+      std::unique_ptr<StorageType> type = m_lhs->type->Clone();
+      m_rhs = std::make_unique<CastNode>(type, m_rhs);
+    }
+    else if (m_lhs->type->GetType() != StorageMetaType::Real ||
+             ((dynamic_cast<RealType *>(m_lhs.get())->real <
+               dynamic_cast<RealType *>(m_rhs.get())->real)))
+    {
+      std::unique_ptr<StorageType> type = m_rhs->type->Clone();
+      m_lhs = std::make_unique<CastNode>(type, m_lhs);
+    }
+  }
+
   void BinaryOpNode::CastTypePointer()
   {
     if (m_lhs->type->GetType() == StorageMetaType::Array)
@@ -184,8 +203,11 @@ namespace Vypr
     case StorageMetaType::Integral:
       CastTypeIntegral();
       break;
-    default:
+    case StorageMetaType::Real:
+      CastTypeReal();
       break;
+    default:
+      throw CompileError(CompileErrorId::UnimplementedFeature, 0, 0);
     }
   }
 
@@ -265,148 +287,112 @@ namespace Vypr
     llvm::Value *lhs = m_lhs->GenerateCode(context);
     llvm::Value *rhs = m_rhs->GenerateCode(context);
 
-    llvm::Value *result = nullptr;
     switch (m_op)
     {
     case BinaryOp::Add:
-      result = context.builder.CreateAdd(lhs, rhs);
-      break;
-    case BinaryOp::Subtract:
-      result = context.builder.CreateSub(lhs, rhs);
-      break;
-    case BinaryOp::Multiply:
-      result = context.builder.CreateMul(lhs, rhs);
-      break;
-    case BinaryOp::Divide:
       if (type->GetType() == StorageMetaType::Integral)
       {
-        if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
-        {
-          result = context.builder.CreateUDiv(lhs, rhs);
-        }
-        else
-        {
-          result = context.builder.CreateSDiv(lhs, rhs);
-        }
+        return context.builder.CreateAdd(lhs, rhs);
       }
-      else
+      return context.builder.CreateFAdd(lhs, rhs);
+    case BinaryOp::Subtract:
+      if (type->GetType() == StorageMetaType::Integral)
       {
-        result = context.builder.CreateFDiv(lhs, rhs);
+        return context.builder.CreateSub(lhs, rhs);
       }
-      break;
+      return context.builder.CreateFSub(lhs, rhs);
+    case BinaryOp::Multiply:
+      if (type->GetType() == StorageMetaType::Integral)
+      {
+        return context.builder.CreateMul(lhs, rhs);
+      }
+      return context.builder.CreateFMul(lhs, rhs);
+    case BinaryOp::Divide:
+      if (type->GetType() == StorageMetaType::Integral &&
+          dynamic_cast<IntegralType *>(type.get())->isUnsigned)
+      {
+        return context.builder.CreateUDiv(lhs, rhs);
+      }
+      else if (type->GetType() == StorageMetaType::Integral)
+      {
+        return context.builder.CreateSDiv(lhs, rhs);
+      }
+      return context.builder.CreateFDiv(lhs, rhs);
     case BinaryOp::Modulo:
       if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
       {
-        result = context.builder.CreateURem(lhs, rhs);
+        return context.builder.CreateURem(lhs, rhs);
       }
-      else
-      {
-        result = context.builder.CreateSRem(lhs, rhs);
-      }
-      break;
+      return context.builder.CreateSRem(lhs, rhs);
     case BinaryOp::LogicalAnd:
     case BinaryOp::And:
-      result = context.builder.CreateAnd(lhs, rhs);
-      break;
+      return context.builder.CreateAnd(lhs, rhs);
     case BinaryOp::Xor:
-      result = context.builder.CreateXor(lhs, rhs);
-      break;
+      return context.builder.CreateXor(lhs, rhs);
     case BinaryOp::LogicalOr:
     case BinaryOp::Or:
-      result = context.builder.CreateOr(lhs, rhs);
-      break;
+      return context.builder.CreateOr(lhs, rhs);
     case BinaryOp::LessThan:
-      if (type->GetType() == StorageMetaType::Integral)
+      if (type->GetType() == StorageMetaType::Integral &&
+          dynamic_cast<IntegralType *>(type.get())->isUnsigned)
       {
-        if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
-        {
-          result = context.builder.CreateICmpSLT(lhs, rhs);
-        }
-        else
-        {
-          result = context.builder.CreateICmpULT(lhs, rhs);
-        }
+        return context.builder.CreateICmpSLT(lhs, rhs);
       }
-      else
+      else if (type->GetType() == StorageMetaType::Integral)
       {
-        result = context.builder.CreateFCmpOLT(lhs, rhs);
+        return context.builder.CreateICmpULT(lhs, rhs);
       }
+      return context.builder.CreateFCmpOLT(lhs, rhs);
       break;
     case BinaryOp::LessEqual:
-      if (type->GetType() == StorageMetaType::Integral)
+      if (type->GetType() == StorageMetaType::Integral &&
+          dynamic_cast<IntegralType *>(type.get())->isUnsigned)
       {
-        if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
-        {
-          result = context.builder.CreateICmpSLE(lhs, rhs);
-        }
-        else
-        {
-          result = context.builder.CreateICmpULE(lhs, rhs);
-        }
+        return context.builder.CreateICmpSLE(lhs, rhs);
       }
       else
       {
-        result = context.builder.CreateFCmpOLE(lhs, rhs);
+        return context.builder.CreateICmpULE(lhs, rhs);
       }
-      break;
+      return context.builder.CreateFCmpOLE(lhs, rhs);
     case BinaryOp::GreaterThan:
-      if (type->GetType() == StorageMetaType::Integral)
+      if (type->GetType() == StorageMetaType::Integral &&
+          dynamic_cast<IntegralType *>(type.get())->isUnsigned)
       {
-        if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
-        {
-          result = context.builder.CreateICmpSGT(lhs, rhs);
-        }
-        else
-        {
-          result = context.builder.CreateICmpUGT(lhs, rhs);
-        }
+        return context.builder.CreateICmpSGT(lhs, rhs);
       }
-      else
+      else if (type->GetType() == StorageMetaType::Integral)
       {
-        result = context.builder.CreateFCmpOGT(lhs, rhs);
+        return context.builder.CreateICmpUGT(lhs, rhs);
       }
-      break;
+      return context.builder.CreateFCmpOGT(lhs, rhs);
     case BinaryOp::GreaterEqual:
-      if (type->GetType() == StorageMetaType::Integral)
+      if (type->GetType() == StorageMetaType::Integral &&
+          dynamic_cast<IntegralType *>(type.get())->isUnsigned)
       {
-        if (dynamic_cast<IntegralType *>(type.get())->isUnsigned)
-        {
-          result = context.builder.CreateICmpSGE(lhs, rhs);
-        }
-        else
-        {
-          result = context.builder.CreateICmpUGE(lhs, rhs);
-        }
+        return context.builder.CreateICmpSGE(lhs, rhs);
       }
-      else
+      else if (type->GetType() == StorageMetaType::Integral)
       {
-        result = context.builder.CreateFCmpOGE(lhs, rhs);
+        return context.builder.CreateICmpUGE(lhs, rhs);
       }
-      break;
+      return context.builder.CreateFCmpOGE(lhs, rhs);
     case BinaryOp::Equal:
       if (type->GetType() == StorageMetaType::Integral)
       {
-        result = context.builder.CreateICmpEQ(lhs, rhs);
+        return context.builder.CreateICmpEQ(lhs, rhs);
       }
-      else
-      {
-        result = context.builder.CreateFCmpOEQ(lhs, rhs);
-      }
-      break;
+      return context.builder.CreateFCmpOEQ(lhs, rhs);
     case BinaryOp::NotEqual:
       if (type->GetType() == StorageMetaType::Integral)
       {
-        result = context.builder.CreateICmpNE(lhs, rhs);
+        return context.builder.CreateICmpNE(lhs, rhs);
       }
-      else
-      {
-        result = context.builder.CreateFCmpONE(lhs, rhs);
-      }
-      break;
+      return context.builder.CreateFCmpONE(lhs, rhs);
     default:
       break;
     }
 
-    return result;
+    throw CompileError(CompileErrorId::UnimplementedFeature, 0, 0);
   }
 } // namespace Vypr

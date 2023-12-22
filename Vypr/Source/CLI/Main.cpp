@@ -20,20 +20,8 @@ int main(int, char **)
   llvm::InitializeAllAsmParsers();
   llvm::InitializeAllAsmPrinters();
 
-  // Temp
-  llvm::Function *function = llvm::Function::Create(
-      llvm::FunctionType::get(context->builder.getInt8Ty()->getPointerTo(),
-                              false),
-      llvm::Function::ExternalLinkage, "TestFunction", context->module);
-
-  llvm::BasicBlock *block =
-      llvm::BasicBlock::Create(context->context, "entry", function);
-  context->builder.SetInsertPoint(block);
-
-  // Temp
-
   Vypr::CLangLexer lexer(
-      std::make_unique<Vypr::StringScanner>(L"\"hello,\"\n\" world\""));
+      std::make_unique<Vypr::StringScanner>(L"1.0f + (3 & 1)"));
 
   try
   {
@@ -41,13 +29,23 @@ int main(int, char **)
     typeTable.AddSymbol(L"var", std::make_shared<Vypr::IntegralType>(
                                     Vypr::Integral::Int, false, false, true));
 
-    llvm::AllocaInst *variable = context->builder.CreateAlloca(
-        context->builder.getInt32Ty(), nullptr, "var");
-    context->builder.CreateStore(context->builder.getInt32(42), variable);
-    context->symbolTable.AddSymbol(L"var", variable);
-
     auto expression = Vypr::ExpressionNode::Parse(lexer, typeTable);
     std::wcout << expression->PrettyPrint(0) << std::endl;
+
+    // Temp
+    llvm::Function *function = llvm::Function::Create(
+        llvm::FunctionType::get(expression->type->GetIRType(*context), false),
+        llvm::Function::ExternalLinkage, "TestFunction", context->module);
+    llvm::BasicBlock *block =
+        llvm::BasicBlock::Create(context->context, "entry", function);
+    context->builder.SetInsertPoint(block);
+
+    llvm::GlobalVariable *variable = new llvm::GlobalVariable(
+        context->module, context->builder.getInt32Ty(), false,
+        llvm::GlobalValue::InternalLinkage, context->builder.getInt32(42));
+    context->builder.CreateStore(context->builder.getInt32(42), variable);
+    context->symbolTable.AddSymbol(L"var", variable);
+    // Temp
 
     llvm::Value *ret = expression->GenerateCode(*context);
 

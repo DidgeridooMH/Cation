@@ -21,6 +21,9 @@ namespace Vypr
     llvm::Value *CastToIntegral(Context &context,
                                 llvm::Value *childExpression) const;
 
+    llvm::Value *CastToReal(Context &context,
+                            llvm::Value *childExpression) const;
+
     llvm::Value *CastIntegralToIntegral(Context &context,
                                         llvm::Value *childExpression) const;
   };

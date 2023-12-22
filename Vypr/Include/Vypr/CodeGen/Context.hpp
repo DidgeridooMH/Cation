@@ -23,6 +23,6 @@ namespace Vypr
     llvm::LLVMContext context;
     llvm::Module module;
     llvm::IRBuilder<> builder;
-    SymbolTable<llvm::AllocaInst *> symbolTable;
+    SymbolTable<llvm::Value *> symbolTable;
   };
 } // namespace Vypr

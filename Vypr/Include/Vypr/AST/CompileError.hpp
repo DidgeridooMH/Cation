@@ -13,7 +13,9 @@ namespace Vypr
     ExpectedGroupEnd,
     UndefinedSymbol,
     InvalidOperands,
-    ConstantTooLarge
+    ConstantTooLarge,
+    UnimplementedFeature,
+    InvalidCast
   };
 
   class CompileError : std::exception

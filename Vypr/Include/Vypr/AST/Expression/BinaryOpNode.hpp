@@ -27,6 +27,7 @@ namespace Vypr
     void CastType();
     void CastTypeIntegral();
     void CastTypeIntegralComparison();
+    void CastTypeReal();
     void CastTypePointer();
 
     void CastTypeArithmetic(BinaryOp op);
