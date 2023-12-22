@@ -6,7 +6,7 @@
 
 namespace Vypr
 {
-  VariableNode::VariableNode(std::unique_ptr<StorageType> &type,
+  VariableNode::VariableNode(std::unique_ptr<StorageType> &&type,
                              std::wstring symbol, size_t column, size_t line)
       : ExpressionNode(std::move(type), column, line), m_symbol(symbol)
   {
@@ -101,8 +101,8 @@ namespace Vypr
 
     std::unique_ptr<StorageType> symbolType = symbol->Clone();
     symbolType->isLValue = true;
-
-    return std::make_unique<VariableNode>(symbolType, nextToken.content,
-                                          nextToken.column, nextToken.line);
+    return std::make_unique<VariableNode>(std::move(symbolType),
+                                          nextToken.content, nextToken.column,
+                                          nextToken.line);
   }
 } // namespace Vypr

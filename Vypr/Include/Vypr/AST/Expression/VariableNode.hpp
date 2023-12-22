@@ -18,7 +18,7 @@ namespace Vypr
     /// @param symbol Name of the symbol.
     /// @param column Column in the source file where the symble name starts.
     /// @param line Line in the source file where the symbol name starts.
-    VariableNode(std::unique_ptr<StorageType> &type, std::wstring symbol,
+    VariableNode(std::unique_ptr<StorageType> &&type, std::wstring symbol,
                  size_t column, size_t line);
 
     /// @brief Print information about the variable.

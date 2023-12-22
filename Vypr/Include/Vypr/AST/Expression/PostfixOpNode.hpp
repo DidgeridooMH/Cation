@@ -10,7 +10,7 @@ namespace Vypr
   class PostfixOpNode : public ExpressionNode
   {
   public:
-    PostfixOpNode(PostfixOp op, std::unique_ptr<ExpressionNode> &expression,
+    PostfixOpNode(PostfixOp op, std::unique_ptr<ExpressionNode> &&expression,
                   size_t column, size_t line);
 
     std::wstring PrettyPrint(int level) const override;

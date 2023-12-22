@@ -5,7 +5,7 @@
 namespace Vypr
 {
   PostfixOpNode::PostfixOpNode(PostfixOp op,
-                               std::unique_ptr<ExpressionNode> &expression,
+                               std::unique_ptr<ExpressionNode> &&expression,
                                size_t column, size_t line)
       : ExpressionNode(nullptr, column, line), m_op(op),
         m_expression(std::move(expression))

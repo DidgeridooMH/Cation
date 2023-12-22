@@ -90,13 +90,15 @@ namespace Vypr
       {
         lexer.GetToken();
         base = std::make_unique<PostfixOpNode>(
-            PostfixOp::Increment, base, nextToken.column, nextToken.line);
+            PostfixOp::Increment, std::move(base), nextToken.column,
+            nextToken.line);
       }
       else if (nextToken.type == CLangTokenType::Decrement)
       {
         lexer.GetToken();
         base = std::make_unique<PostfixOpNode>(
-            PostfixOp::Decrement, base, nextToken.column, nextToken.line);
+            PostfixOp::Decrement, std::move(base), nextToken.column,
+            nextToken.line);
       }
       else if (nextToken.type == CLangTokenType::RightParenthesis)
       {

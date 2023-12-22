@@ -59,8 +59,8 @@ namespace Vypr
       {BinaryOp::LogicalAnd, L"LogicalAnd"},
       {BinaryOp::LogicalOr, L"LogicalOr"}};
 
-  BinaryOpNode::BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> &lhs,
-                             std::unique_ptr<ExpressionNode> &rhs,
+  BinaryOpNode::BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> &&lhs,
+                             std::unique_ptr<ExpressionNode> &&rhs,
                              size_t column, size_t line)
       : ExpressionNode(nullptr, column, line), m_op(op), m_lhs(std::move(lhs)),
         m_rhs(std::move(rhs))
@@ -114,16 +114,14 @@ namespace Vypr
     if (lhs->integral < exprType->integral ||
         lhs->isUnsigned != exprType->isUnsigned)
     {
-      std::unique_ptr<StorageType> castType = exprType->Clone();
-      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
+      m_lhs = std::make_unique<CastNode>(exprType->Clone(), std::move(m_lhs));
     }
 
     IntegralType *rhs = dynamic_cast<IntegralType *>(m_rhs->type.get());
     if (rhs->integral < exprType->integral ||
         rhs->isUnsigned != exprType->isUnsigned)
     {
-      std::unique_ptr<StorageType> castType = exprType->Clone();
-      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
+      m_rhs = std::make_unique<CastNode>(exprType->Clone(), std::move(m_rhs));
     }
   }
 
@@ -137,7 +135,7 @@ namespace Vypr
       std::unique_ptr<StorageType> castType = m_rhs->type->Clone();
       dynamic_cast<IntegralType *>(castType.get())->isUnsigned |=
           rhs->isUnsigned;
-      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
+      m_lhs = std::make_unique<CastNode>(std::move(castType), std::move(m_lhs));
     }
 
     if (rhs->integral < lhs->integral)
@@ -145,7 +143,7 @@ namespace Vypr
       std::unique_ptr<StorageType> castType = lhs->Clone();
       dynamic_cast<IntegralType *>(castType.get())->isUnsigned |=
           rhs->isUnsigned;
-      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
+      m_rhs = std::make_unique<CastNode>(std::move(castType), std::move(m_rhs));
     }
   }
 
@@ -155,15 +153,15 @@ namespace Vypr
         (dynamic_cast<RealType *>(m_lhs.get())->real >
          dynamic_cast<RealType *>(m_rhs.get())->real))
     {
-      std::unique_ptr<StorageType> type = m_lhs->type->Clone();
-      m_rhs = std::make_unique<CastNode>(type, m_rhs);
+      m_rhs =
+          std::make_unique<CastNode>(m_lhs->type->Clone(), std::move(m_rhs));
     }
     else if (m_lhs->type->GetType() != StorageMetaType::Real ||
              ((dynamic_cast<RealType *>(m_lhs.get())->real <
                dynamic_cast<RealType *>(m_rhs.get())->real)))
     {
-      std::unique_ptr<StorageType> type = m_rhs->type->Clone();
-      m_lhs = std::make_unique<CastNode>(type, m_lhs);
+      m_lhs =
+          std::make_unique<CastNode>(m_rhs->type->Clone(), std::move(m_lhs));
     }
   }
 
@@ -171,28 +169,28 @@ namespace Vypr
   {
     if (m_lhs->type->GetType() == StorageMetaType::Array)
     {
-      std::unique_ptr<StorageType> castType = m_lhs->type->Clone();
-      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
+      m_lhs =
+          std::make_unique<CastNode>(m_lhs->type->Clone(), std::move(m_lhs));
     }
     else if (m_lhs->type->GetType() != StorageMetaType::Pointer)
     {
       std::unique_ptr<StorageType> voidType = std::make_unique<StorageType>();
-      std::unique_ptr<StorageType> castType =
-          std::make_unique<PointerType>(voidType, false, false);
-      m_lhs = std::make_unique<CastNode>(castType, m_lhs);
+      m_lhs = std::make_unique<CastNode>(
+          std::make_unique<PointerType>(voidType, false, false),
+          std::move(m_lhs));
     }
 
     if (m_rhs->type->GetType() == StorageMetaType::Array)
     {
-      std::unique_ptr<StorageType> castType = m_rhs->type->Clone();
-      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
+      m_rhs =
+          std::make_unique<CastNode>(m_rhs->type->Clone(), std::move(m_rhs));
     }
     else if (m_rhs->type->GetType() != StorageMetaType::Pointer)
     {
       std::unique_ptr<StorageType> voidType = std::make_unique<StorageType>();
-      std::unique_ptr<StorageType> castType =
-          std::make_unique<PointerType>(voidType, false, false);
-      m_rhs = std::make_unique<CastNode>(castType, m_rhs);
+      m_rhs = std::make_unique<CastNode>(
+          std::make_unique<PointerType>(voidType, false, false),
+          std::move(m_rhs));
     }
   }
 
@@ -239,18 +237,18 @@ namespace Vypr
         dynamic_cast<IntegralType *>(m_lhs->type.get())->integral !=
             Integral::Bool)
     {
-      std::unique_ptr<StorageType> lhsType =
-          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-      m_lhs = std::make_unique<CastNode>(lhsType, m_lhs);
+      m_lhs = std::make_unique<CastNode>(
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false),
+          std::move(m_lhs));
     }
 
     if (m_rhs->type->GetType() != StorageMetaType::Integral ||
         dynamic_cast<IntegralType *>(m_rhs->type.get())->integral !=
             Integral::Bool)
     {
-      std::unique_ptr<StorageType> rhsType =
-          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-      m_rhs = std::make_unique<CastNode>(rhsType, m_rhs);
+      m_rhs = std::make_unique<CastNode>(
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false),
+          std::move(m_rhs));
     }
   }
 
@@ -278,8 +276,8 @@ namespace Vypr
                          opToken.line);
     }
 
-    return std::make_unique<BinaryOpNode>(op, base, rhs, opToken.column,
-                                          opToken.line);
+    return std::make_unique<BinaryOpNode>(op, std::move(base), std::move(rhs),
+                                          opToken.column, opToken.line);
   }
 
   llvm::Value *BinaryOpNode::GenerateCode(Context &context) const

@@ -6,8 +6,8 @@
 
 namespace Vypr
 {
-  CastNode::CastNode(std::unique_ptr<StorageType> &castType,
-                     std::unique_ptr<ExpressionNode> &expression)
+  CastNode::CastNode(std::unique_ptr<StorageType> &&castType,
+                     std::unique_ptr<ExpressionNode> &&expression)
       : ExpressionNode(std::move(castType), expression->column,
                        expression->line),
         expression(std::move(expression))

@@ -11,8 +11,8 @@ namespace Vypr
   class BinaryOpNode : public ExpressionNode
   {
   public:
-    BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> &lhs,
-                 std::unique_ptr<ExpressionNode> &rhs, size_t column,
+    BinaryOpNode(BinaryOp op, std::unique_ptr<ExpressionNode> &&lhs,
+                 std::unique_ptr<ExpressionNode> &&rhs, size_t column,
                  size_t line);
 
     std::wstring PrettyPrint(int level) const override;

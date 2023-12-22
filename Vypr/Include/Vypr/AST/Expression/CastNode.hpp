@@ -12,8 +12,8 @@ namespace Vypr
     /// @brief Create a cast node in the AST tree.
     /// @param castType Type to cast `expression` to.
     /// @param expression Expression to to `castType`.
-    CastNode(std::unique_ptr<StorageType> &castType,
-             std::unique_ptr<ExpressionNode> &expression);
+    CastNode(std::unique_ptr<StorageType> &&castType,
+             std::unique_ptr<ExpressionNode> &&expression);
 
     /// @brief Print the AST tree for the cast node.
     /// @param level Indentation level of the current tree position.

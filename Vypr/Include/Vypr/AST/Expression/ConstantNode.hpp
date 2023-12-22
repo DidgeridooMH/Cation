@@ -29,7 +29,7 @@ namespace Vypr
     ///
     /// @param line Line in the source file where the
     /// constant starts.
-    ConstantNode(std::unique_ptr<StorageType> &type, ConstantValue value,
+    ConstantNode(std::unique_ptr<StorageType> &&type, ConstantValue value,
                  size_t column, size_t line);
 
     /// @brief Print information about the constant.

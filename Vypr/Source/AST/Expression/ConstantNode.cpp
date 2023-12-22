@@ -13,7 +13,7 @@
 
 namespace Vypr
 {
-  ConstantNode::ConstantNode(std::unique_ptr<StorageType> &type,
+  ConstantNode::ConstantNode(std::unique_ptr<StorageType> &&type,
                              ConstantValue value, size_t column, size_t line)
       : ExpressionNode(std::move(type), column, line), m_value(value)
   {
@@ -83,15 +83,12 @@ namespace Vypr
       return ParseIntegerConstant(nextToken);
     case CLangTokenType::FloatConstant:
       return ParseFloatConstant(nextToken);
-    case CLangTokenType::CharacterConstant: {
-      std::unique_ptr<StorageType> constantType =
-          std::make_unique<IntegralType>(Integral::Byte, false, false, false);
+    case CLangTokenType::CharacterConstant:
       return std::make_unique<ConstantNode>(
-          constantType,
+          std::make_unique<IntegralType>(Integral::Byte, false, false, false),
           (uint8_t)std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t>()
               .to_bytes(nextToken.content)[0],
           nextToken.column, nextToken.line);
-    }
     case CLangTokenType::StringLiteral:
       return ParseStringLiteral(nextToken, lexer);
     default:
@@ -194,8 +191,8 @@ namespace Vypr
         longCount < 2 ? Integral::Int : Integral::Long, isUnsigned, false,
         false);
 
-    return std::make_unique<ConstantNode>(constantType, value, token.column,
-                                          token.line);
+    return std::make_unique<ConstantNode>(std::move(constantType), value,
+                                          token.column, token.line);
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::ParseFloatConstant(
@@ -254,8 +251,8 @@ namespace Vypr
         }
       }
     }
-    return std::make_unique<ConstantNode>(constantType, value, token.column,
-                                          token.line);
+    return std::make_unique<ConstantNode>(std::move(constantType), value,
+                                          token.column, token.line);
   }
 
   std::unique_ptr<ConstantNode> ConstantNode::ParseStringLiteral(
@@ -273,7 +270,7 @@ namespace Vypr
         std::make_unique<IntegralType>(Integral::Byte, false, true, false);
     std::unique_ptr<StorageType> pointerType =
         std::make_unique<PointerType>(storageType, false, false);
-    return std::make_unique<ConstantNode>(pointerType, stringLiteral,
+    return std::make_unique<ConstantNode>(std::move(pointerType), stringLiteral,
                                           token.column, token.line);
   }
 } // namespace Vypr

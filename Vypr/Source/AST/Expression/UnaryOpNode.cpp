@@ -27,7 +27,7 @@ namespace Vypr
       {UnaryOp::Sizeof, L"Sizeof"}};
 
   UnaryOpNode::UnaryOpNode(UnaryOp op,
-                           std::unique_ptr<ExpressionNode> &expression,
+                           std::unique_ptr<ExpressionNode> &&expression,
                            size_t column, size_t line)
       : ExpressionNode(nullptr, column, line), m_op(op),
         m_expression(std::move(expression))
@@ -44,9 +44,9 @@ namespace Vypr
              Integral::Bool))
 
     {
-      std::unique_ptr<StorageType> castType =
-          std::make_unique<IntegralType>(Integral::Bool, false, false, false);
-      m_expression = std::make_unique<CastNode>(castType, m_expression);
+      m_expression = std::make_unique<CastNode>(
+          std::make_unique<IntegralType>(Integral::Bool, false, false, false),
+          std::move(m_expression));
     }
   }
 
@@ -62,12 +62,9 @@ namespace Vypr
                                                      TypeTable &symbolTable)
   {
     CLangToken opToken = lexer.GetToken();
-    UnaryOp op = UnaryOperations.at(opToken.type);
-
-    std::unique_ptr<ExpressionNode> expression =
-        ExpressionNode::Parse(lexer, symbolTable, 1);
-
-    return std::make_unique<UnaryOpNode>(op, expression, opToken.column,
-                                         opToken.line);
+    return std::make_unique<UnaryOpNode>(
+        UnaryOperations.at(opToken.type),
+        ExpressionNode::Parse(lexer, symbolTable, 1), opToken.column,
+        opToken.line);
   }
 } // namespace Vypr
