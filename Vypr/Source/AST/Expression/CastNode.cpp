@@ -41,6 +41,12 @@ namespace Vypr
     throw CompileError(CompileErrorId::InvalidCast, 0, 0);
   }
 
+  std::unique_ptr<ExpressionNode> CastNode::Parse(CLangLexer &lexer,
+                                                  TypeTable &symbolTable)
+  {
+    // @todo: Parse the type name and create the cast node.
+  }
+
   llvm::Value *CastNode::CastToIntegral(Context &context,
                                         llvm::Value *childExpression) const
   {

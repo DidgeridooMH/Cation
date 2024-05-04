@@ -2,10 +2,12 @@
 
 #include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/BinaryOpNode.hpp"
+#include "Vypr/AST/Expression/CastNode.hpp"
 #include "Vypr/AST/Expression/ConstantNode.hpp"
 #include "Vypr/AST/Expression/PostfixOpNode.hpp"
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
 #include "Vypr/AST/Expression/VariableNode.hpp"
+#include "Vypr/Lexer/CLangTokenMap.hpp"
 
 namespace Vypr
 {
@@ -53,7 +55,14 @@ namespace Vypr
       {
       case CLangTokenType::LeftParenthesis: {
         lexer.GetToken();
-        base = ExpressionNode::Parse(lexer, symbolTable);
+        if (TypePrefixSet.contains(lexer.PeekToken().type))
+        {
+          base = CastNode::Parse(lexer, symbolTable);
+        }
+        else
+        {
+          base = ExpressionNode::Parse(lexer, symbolTable);
+        }
         CLangToken groupClose = lexer.GetToken();
         if (groupClose.type != CLangTokenType::RightParenthesis)
         {
