@@ -263,13 +263,13 @@ namespace Vypr
 
   std::unique_ptr<ExpressionNode> BinaryOpNode::Parse(
       std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer,
-      TypeTable &symbolTable)
+      const ASTContext &context)
   {
     CLangToken opToken = lexer.GetToken();
     BinaryOp op = BinaryOperations.at(opToken.type);
 
-    std::unique_ptr<ExpressionNode> rhs = ExpressionNode::Parse(
-        lexer, symbolTable, BinaryOperationPrecedence.at(op));
+    std::unique_ptr<ExpressionNode> rhs =
+        ExpressionNode::Parse(lexer, context, BinaryOperationPrecedence.at(op));
     if (rhs == nullptr)
     {
       throw CompileError(CompileErrorId::ExpectedExpression, opToken.column,

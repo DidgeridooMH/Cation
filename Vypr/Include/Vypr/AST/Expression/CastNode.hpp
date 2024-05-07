@@ -25,6 +25,9 @@ namespace Vypr
     /// @return Value computed from this IR sub-tree.
     llvm::Value *GenerateCode(Context &context) const override;
 
+    static std::unique_ptr<ExpressionNode> Parse(CLangLexer &lexer,
+                                                 const TypeTable &symbolTable);
+
     /// @brief Expression to cast to a new type.
     std::unique_ptr<ExpressionNode> expression;
 

@@ -39,12 +39,12 @@ namespace Vypr
     /// information from the typeTable.
     ///
     /// @param lexer Lexer with the variable on the front.
-    /// @param symbolTable Table containing symbols as the key and type
+    /// @param context Table containing symbols as the key and type
     /// as the value.
     ///
     /// @returns Variable node that was constructed.
     static std::unique_ptr<VariableNode> Parse(CLangLexer &lexer,
-                                               TypeTable &symbolTable);
+                                               const ASTContext &context);
 
   private:
     std::wstring m_symbol;

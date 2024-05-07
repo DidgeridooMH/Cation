@@ -59,12 +59,11 @@ namespace Vypr
   }
 
   std::unique_ptr<ExpressionNode> UnaryOpNode::Parse(CLangLexer &lexer,
-                                                     TypeTable &symbolTable)
+                                                     const ASTContext &context)
   {
     CLangToken opToken = lexer.GetToken();
     return std::make_unique<UnaryOpNode>(
         UnaryOperations.at(opToken.type),
-        ExpressionNode::Parse(lexer, symbolTable, 1), opToken.column,
-        opToken.line);
+        ExpressionNode::Parse(lexer, context, 1), opToken.column, opToken.line);
   }
 } // namespace Vypr

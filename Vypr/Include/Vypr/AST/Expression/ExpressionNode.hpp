@@ -1,10 +1,10 @@
 #pragma once
 
-#include "llvm/IR/Value.h"
-#include "Vypr/AST/SymbolTable.hpp"
+#include "Vypr/AST/ASTContext.hpp"
 #include "Vypr/AST/Type/StorageType.hpp"
 #include "Vypr/CodeGen/Context.hpp"
 #include "Vypr/Lexer/CLangLexer.hpp"
+#include "llvm/IR/Value.h"
 
 namespace Vypr
 {
@@ -17,7 +17,7 @@ namespace Vypr
                    size_t line);
 
     static std::unique_ptr<ExpressionNode> Parse(CLangLexer &lexer,
-                                                 TypeTable &symbolTable,
+                                                 const TypeTable &context,
                                                  int precedenceLevel = 15);
 
     virtual std::wstring PrettyPrint(int level) const;

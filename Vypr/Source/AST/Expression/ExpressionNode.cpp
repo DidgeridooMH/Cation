@@ -3,13 +3,14 @@
 #include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/BinaryOpNode.hpp"
 #include "Vypr/AST/Expression/ConstantNode.hpp"
+#include "Vypr/AST/Expression/CastNode.hpp"
 #include "Vypr/AST/Expression/PostfixOpNode.hpp"
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
 #include "Vypr/AST/Expression/VariableNode.hpp"
+#include "Vypr/Lexer/CLangTokenMap.hpp"
 
 namespace Vypr
 {
-
   ExpressionNode::ExpressionNode() : column(0), line(0)
   {
   }
@@ -36,16 +37,16 @@ namespace Vypr
     return nullptr;
   };
 
-  std::unique_ptr<ExpressionNode> ExpressionNode::Parse(CLangLexer &lexer,
-                                                        TypeTable &symbolTable,
-                                                        int precedenceLevel)
+  std::unique_ptr<ExpressionNode> ExpressionNode::Parse(
+      CLangLexer &lexer, const TypeTable &context, int precedenceLevel)
   {
     std::unique_ptr<ExpressionNode> base;
 
     CLangToken nextToken = lexer.PeekToken();
     if (UnaryOperations.contains(nextToken.type))
     {
-      base = UnaryOpNode::Parse(lexer, symbolTable);
+      // @todo
+      base = UnaryOpNode::Parse(lexer, context);
     }
     else
     {
@@ -53,12 +54,19 @@ namespace Vypr
       {
       case CLangTokenType::LeftParenthesis: {
         lexer.GetToken();
-        base = ExpressionNode::Parse(lexer, symbolTable);
-        CLangToken groupClose = lexer.GetToken();
-        if (groupClose.type != CLangTokenType::RightParenthesis)
+        if (TypePrefixSet.contains(lexer.PeekToken().type))
         {
-          throw CompileError(CompileErrorId::ExpectedGroupEnd, groupClose.line,
-                             groupClose.column);
+          base = CastNode::Parse(lexer, context);
+        }
+        else
+        {
+          base = ExpressionNode::Parse(lexer, context);
+          CLangToken groupClose = lexer.GetToken();
+          if (groupClose.type != CLangTokenType::RightParenthesis)
+          {
+            throw CompileError(CompileErrorId::ExpectedGroupEnd,
+                               groupClose.line, groupClose.column);
+          }
         }
         break;
       }
@@ -69,7 +77,7 @@ namespace Vypr
         base = ConstantNode::Parse(lexer);
         break;
       case CLangTokenType::Identifier:
-        base = VariableNode::Parse(lexer, symbolTable);
+        base = VariableNode::Parse(lexer, context);
         break;
       default:
         break;
@@ -106,7 +114,7 @@ namespace Vypr
       }
       else
       {
-        base = BinaryOpNode::Parse(base, lexer, symbolTable);
+        base = BinaryOpNode::Parse(base, lexer, context);
       }
       nextToken = lexer.PeekToken();
     }

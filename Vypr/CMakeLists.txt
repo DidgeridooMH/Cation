@@ -23,6 +23,7 @@ set(LIBVYPR_SOURCE
 
 set(LIBVYPR_HEADER
   "Include/Vypr/AST/CompileError.hpp"
+  "Include/Vypr/AST/ASTContext.hpp"
   "Include/Vypr/AST/Expression/ConstantNode.hpp"
   "Include/Vypr/AST/Expression/CastNode.hpp"
   "Include/Vypr/AST/Expression/ExpressionNode.hpp"

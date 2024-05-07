@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include "Vypr/AST/ASTContext.hpp"
 #include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/PointerType.hpp"
@@ -14,28 +15,28 @@ namespace VariableNodeTest
   TEST(Parse, InvalidVariableName)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"34"));
-    Vypr::TypeTable typeTable;
-    ASSERT_THROW(Vypr::VariableNode::Parse(lexer, typeTable),
+    Vypr::ASTContext astContext;
+    ASSERT_THROW(Vypr::VariableNode::Parse(lexer, astContext),
                  Vypr::CompileError);
   }
 
   TEST(Parse, UndefinedVariable)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"alpha"));
-    Vypr::TypeTable typeTable;
-    ASSERT_THROW(Vypr::VariableNode::Parse(lexer, typeTable),
+    Vypr::ASTContext astContext;
+    ASSERT_THROW(Vypr::VariableNode::Parse(lexer, astContext),
                  Vypr::CompileError);
   }
 
   TEST(Parse, IntegralVariable)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"alpha"));
-    Vypr::TypeTable typeTable;
-    typeTable.AddSymbol(L"alpha", std::make_shared<Vypr::IntegralType>(
+    Vypr::ASTContext astContext;
+    astContext.typeTable.AddSymbol(L"alpha", std::make_shared<Vypr::IntegralType>(
                                       Vypr::Integral::Int, false, false, true));
 
     std::unique_ptr<Vypr::VariableNode> variable =
-        Vypr::VariableNode::Parse(lexer, typeTable);
+        Vypr::VariableNode::Parse(lexer, astContext);
 
     ASSERT_EQ(variable->column, 1);
     ASSERT_EQ(variable->line, 1);
@@ -50,12 +51,12 @@ namespace VariableNodeTest
   TEST(Parse, RealVariable)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"alpha"));
-    Vypr::TypeTable typeTable;
-    typeTable.AddSymbol(L"alpha", std::make_shared<Vypr::RealType>(
+    Vypr::ASTContext astContext;
+    astContext.typeTable.AddSymbol(L"alpha", std::make_shared<Vypr::RealType>(
                                       Vypr::Real::Float, false, true));
 
     std::unique_ptr<Vypr::VariableNode> variable =
-        Vypr::VariableNode::Parse(lexer, typeTable);
+        Vypr::VariableNode::Parse(lexer, astContext);
 
     ASSERT_EQ(variable->column, 1);
     ASSERT_EQ(variable->line, 1);
@@ -69,15 +70,15 @@ namespace VariableNodeTest
   TEST(Parse, PointerVariable)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));
-    Vypr::TypeTable typeTable;
+    Vypr::ASTContext astContext;
     std::unique_ptr<Vypr::StorageType> storage =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Bool, false, false,
                                              true);
-    typeTable.AddSymbol(
+    astContext.typeTable.AddSymbol(
         L"beta", std::make_shared<Vypr::PointerType>(storage, false, true));
 
     std::unique_ptr<Vypr::VariableNode> variable =
-        Vypr::VariableNode::Parse(lexer, typeTable);
+        Vypr::VariableNode::Parse(lexer, astContext);
 
     ASSERT_EQ(variable->column, 1);
     ASSERT_EQ(variable->line, 1);
@@ -90,8 +91,8 @@ namespace VariableNodeTest
   TEST(GenerateCode, typeName##Variable)                                       \
   {                                                                            \
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));    \
-    Vypr::TypeTable typeTable;                                                 \
-    typeTable.AddSymbol(L"beta",                                               \
+    Vypr::ASTContext astContext;                                                \
+    astContext.typeTable.AddSymbol(L"beta",                                               \
                         std::make_shared<Vypr::IntegralType>(                  \
                             Vypr::Integral::typeName, false, false, true));    \
     Vypr::Context context("module");                                           \
@@ -109,7 +110,7 @@ namespace VariableNodeTest
                                 context.symbolTable.GetSymbol(L"beta"));       \
                                                                                \
     std::unique_ptr<Vypr::VariableNode> variable =                             \
-        Vypr::VariableNode::Parse(lexer, typeTable);                           \
+        Vypr::VariableNode::Parse(lexer, astContext);                           \
                                                                                \
     llvm::Value *variableValue = variable->GenerateCode(context);              \
                                                                                \
@@ -125,8 +126,8 @@ namespace VariableNodeTest
   TEST(GenerateCode, FloatVariable)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));
-    Vypr::TypeTable typeTable;
-    typeTable.AddSymbol(L"beta", std::make_shared<Vypr::RealType>(
+    Vypr::ASTContext astContext;
+    astContext.typeTable.AddSymbol(L"beta", std::make_shared<Vypr::RealType>(
                                      Vypr::Real::Float, false, true));
     Vypr::Context context("module");
 
@@ -144,7 +145,7 @@ namespace VariableNodeTest
         context.symbolTable.GetSymbol(L"beta"));
 
     std::unique_ptr<Vypr::VariableNode> variable =
-        Vypr::VariableNode::Parse(lexer, typeTable);
+        Vypr::VariableNode::Parse(lexer, astContext);
 
     llvm::Value *variableValue = variable->GenerateCode(context);
 
@@ -154,8 +155,8 @@ namespace VariableNodeTest
   TEST(GenerateCode, DoubleVariable)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));
-    Vypr::TypeTable typeTable;
-    typeTable.AddSymbol(L"beta", std::make_shared<Vypr::RealType>(
+    Vypr::ASTContext astContext;
+    astContext.typeTable.AddSymbol(L"beta", std::make_shared<Vypr::RealType>(
                                      Vypr::Real::Double, false, true));
     Vypr::Context context("module");
 
@@ -173,7 +174,7 @@ namespace VariableNodeTest
         context.symbolTable.GetSymbol(L"beta"));
 
     std::unique_ptr<Vypr::VariableNode> variable =
-        Vypr::VariableNode::Parse(lexer, typeTable);
+        Vypr::VariableNode::Parse(lexer, astContext);
 
     llvm::Value *variableValue = variable->GenerateCode(context);
 
@@ -183,11 +184,11 @@ namespace VariableNodeTest
   TEST(GenerateCode, PointerVariable)
   {
     Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"beta"));
-    Vypr::TypeTable typeTable;
+    Vypr::ASTContext astContext;
     std::unique_ptr<Vypr::StorageType> storage =
         std::make_unique<Vypr::IntegralType>(Vypr::Integral::Int, false, false,
                                              true);
-    typeTable.AddSymbol(
+    astContext.typeTable.AddSymbol(
         L"beta", std::make_shared<Vypr::PointerType>(storage, false, true));
     Vypr::Context context("module");
 
@@ -206,7 +207,7 @@ namespace VariableNodeTest
         context.symbolTable.GetSymbol(L"beta"));
 
     std::unique_ptr<Vypr::VariableNode> variable =
-        Vypr::VariableNode::Parse(lexer, typeTable);
+        Vypr::VariableNode::Parse(lexer, astContext);
 
     llvm::Value *variableValue = variable->GenerateCode(context);
 

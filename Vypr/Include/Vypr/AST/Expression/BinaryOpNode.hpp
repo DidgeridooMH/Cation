@@ -19,7 +19,7 @@ namespace Vypr
 
     static std::unique_ptr<ExpressionNode> Parse(
         std::unique_ptr<ExpressionNode> &base, CLangLexer &lexer,
-        TypeTable &symbolTable);
+        const ASTContext &context);
 
     llvm::Value *GenerateCode(Context &context) const override;
 

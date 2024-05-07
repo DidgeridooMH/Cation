@@ -22,6 +22,13 @@ namespace Vypr
     return result;
   }
 
+  std::unique_ptr<ExpressionNode> CastNode::Parse(CLangLexer &lexer,
+                                                  TypeTable &symbolTable)
+  {
+    // @todo: Parse the type name and create the cast node.
+    return nullptr;
+  }
+
   llvm::Value *CastNode::GenerateCode(Context &context) const
   {
     llvm::Value *resultValue = expression->GenerateCode(context);

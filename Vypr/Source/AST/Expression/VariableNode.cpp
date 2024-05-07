@@ -82,7 +82,7 @@ namespace Vypr
   }
 
   std::unique_ptr<VariableNode> VariableNode::Parse(CLangLexer &lexer,
-                                                    TypeTable &symbolTable)
+                                                    const ASTContext &context)
   {
     CLangToken nextToken = lexer.GetToken();
     if (nextToken.type != CLangTokenType::Identifier)
@@ -92,7 +92,7 @@ namespace Vypr
     }
 
     std::shared_ptr<Vypr::StorageType> symbol =
-        symbolTable.GetSymbol(nextToken.content);
+        context.GetSymbolType(nextToken.content);
     if (symbol == nullptr)
     {
       throw CompileError(CompileErrorId::UndefinedSymbol, nextToken.column,

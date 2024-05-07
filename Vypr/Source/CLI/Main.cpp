@@ -3,6 +3,7 @@
 #include <llvm/Support/TargetSelect.h>
 #include <string>
 
+#include "Vypr/AST/ASTContext.hpp"
 #include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/ExpressionNode.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
@@ -20,16 +21,16 @@ int main(int, char **)
   llvm::InitializeAllAsmParsers();
   llvm::InitializeAllAsmPrinters();
 
-  Vypr::CLangLexer lexer(
-      std::make_unique<Vypr::StringScanner>(L"1.0f + (3 & 1)"));
+  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"(void*)3"));
 
   try
   {
-    Vypr::TypeTable typeTable;
-    typeTable.AddSymbol(L"var", std::make_shared<Vypr::IntegralType>(
-                                    Vypr::Integral::Int, false, false, true));
+    Vypr::ASTContext astContext;
+    astContext.typeTable.AddSymbol(
+        L"var", std::make_shared<Vypr::IntegralType>(Vypr::Integral::Int, false,
+                                                     false, true));
 
-    auto expression = Vypr::ExpressionNode::Parse(lexer, typeTable);
+    auto expression = Vypr::ExpressionNode::Parse(lexer, astContext);
     std::wcout << expression->PrettyPrint(0) << std::endl;
 
     // Temp
