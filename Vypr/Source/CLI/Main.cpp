@@ -15,13 +15,12 @@ int main(int, char **)
 {
   auto context = std::make_unique<Vypr::Context>("module");
 
-  llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
   llvm::InitializeAllAsmParsers();
   llvm::InitializeAllAsmPrinters();
 
-  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"(void*)3"));
+  Vypr::CLangLexer lexer(std::make_unique<Vypr::StringScanner>(L"(void)var"));
 
   try
   {
@@ -51,7 +50,14 @@ int main(int, char **)
     llvm::Value *ret = expression->GenerateCode(*context);
 
     // Temp
-    context->builder.CreateRet(ret);
+    if (ret != llvm::UndefValue::get(context->builder.getVoidTy()))
+    {
+      context->builder.CreateRet(ret);
+    }
+    else
+    {
+      context->builder.CreateRetVoid();
+    }
     // Temp
 
     if (!llvm::verifyFunction(*function, &llvm::errs()) && context->Verify())

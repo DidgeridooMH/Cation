@@ -17,7 +17,7 @@ namespace Vypr
                    size_t line);
 
     static std::unique_ptr<ExpressionNode> Parse(CLangLexer &lexer,
-                                                 const TypeTable &context,
+                                                 const ASTContext &context,
                                                  int precedenceLevel = 15);
 
     virtual std::wstring PrettyPrint(int level) const;

@@ -3,6 +3,7 @@
 #include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Type/IntegralType.hpp"
 #include "Vypr/AST/Type/RealType.hpp"
+#include "llvm/IR/Constants.h"
 
 namespace Vypr
 {
@@ -22,11 +23,32 @@ namespace Vypr
     return result;
   }
 
-  std::unique_ptr<ExpressionNode> CastNode::Parse(CLangLexer &lexer,
-                                                  TypeTable &symbolTable)
+  std::unique_ptr<CastNode> CastNode::Parse(CLangLexer &lexer,
+                                                  const ASTContext &context)
   {
-    // @todo: Parse the type name and create the cast node.
-    return nullptr;
+    // @todo: Parse type outside of this function. It will be useful later in declarations.
+    std::unique_ptr<StorageType> castType = nullptr;
+    auto token = lexer.GetToken();
+    if (token.type == CLangTokenType::Void)
+    {
+      castType = std::make_unique<StorageType>();
+    }
+    else
+    {
+      throw CompileError(CompileErrorId::UnimplementedFeature,
+          token.line, token.column, token.content);
+    }
+
+    token = lexer.GetToken();
+    if (token.type != CLangTokenType::RightParenthesis)
+    {
+      throw CompileError(CompileErrorId::ExpectedGroupEnd, token.line,
+          token.column, token.content);
+    }
+
+    auto innerExpression = ExpressionNode::Parse(lexer, context);
+
+    return std::make_unique<CastNode>(std::move(castType), std::move(innerExpression));
   }
 
   llvm::Value *CastNode::GenerateCode(Context &context) const
@@ -42,7 +64,7 @@ namespace Vypr
     case StorageMetaType::Pointer:
       return CastToPointer(context, resultValue);
     default:
-      break;
+      return llvm::UndefValue::get(context.builder.getVoidTy());
     }
 
     throw CompileError(CompileErrorId::InvalidCast, 0, 0);

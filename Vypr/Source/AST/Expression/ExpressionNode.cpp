@@ -2,8 +2,8 @@
 
 #include "Vypr/AST/CompileError.hpp"
 #include "Vypr/AST/Expression/BinaryOpNode.hpp"
-#include "Vypr/AST/Expression/ConstantNode.hpp"
 #include "Vypr/AST/Expression/CastNode.hpp"
+#include "Vypr/AST/Expression/ConstantNode.hpp"
 #include "Vypr/AST/Expression/PostfixOpNode.hpp"
 #include "Vypr/AST/Expression/UnaryOpNode.hpp"
 #include "Vypr/AST/Expression/VariableNode.hpp"
@@ -35,17 +35,16 @@ namespace Vypr
   llvm::Value *ExpressionNode::GenerateCode(Context &context) const
   {
     return nullptr;
-  };
+  }
 
   std::unique_ptr<ExpressionNode> ExpressionNode::Parse(
-      CLangLexer &lexer, const TypeTable &context, int precedenceLevel)
+      CLangLexer &lexer, const ASTContext &context, int precedenceLevel)
   {
     std::unique_ptr<ExpressionNode> base;
 
     CLangToken nextToken = lexer.PeekToken();
     if (UnaryOperations.contains(nextToken.type))
     {
-      // @todo
       base = UnaryOpNode::Parse(lexer, context);
     }
     else

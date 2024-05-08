@@ -8,5 +8,6 @@ namespace Vypr
       CLangTokenType::FloatType,   CLangTokenType::DoubleType,
       CLangTokenType::Boolean,     CLangTokenType::Struct,
       CLangTokenType::Enumeration, CLangTokenType::Unsigned,
-      CLangTokenType::Const,       CLangTokenType::Signed};
+      CLangTokenType::Const,       CLangTokenType::Signed,
+      CLangTokenType::Void};
 } // namespace Vypr

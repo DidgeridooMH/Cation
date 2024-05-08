@@ -17,6 +17,7 @@ set(LIBVYPR_SOURCE
   "Source/Lexer/CLangKeywords.cpp"
   "Source/Lexer/CLangLexer.cpp"
   "Source/Lexer/CLangPunctuators.cpp"
+  "Source/Lexer/CLangTypePrefixes.cpp"
   "Source/Scanner/Scanner.cpp"
   "Source/Scanner/StringScanner.cpp"
 )

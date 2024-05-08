@@ -1,5 +1,7 @@
 #include "Vypr/AST/Type/StorageType.hpp"
 
+#include "Vypr/AST/CompileError.hpp"
+
 namespace Vypr
 {
   StorageType::StorageType() : StorageType(StorageMetaType::Void, false, false)
@@ -51,6 +53,15 @@ namespace Vypr
     }
 
     return result;
+  }
+
+  llvm::Type *StorageType::GetIRType(Context &context) const
+  {
+    if (m_type == StorageMetaType::Void)
+    {
+      return context.builder.getVoidTy();
+    }
+    throw CompileError(CompileErrorId::UnimplementedFeature, 0, 0);
   }
 
   StorageMetaType StorageType::GetType() const

@@ -4,6 +4,8 @@
 
 namespace Vypr
 {
+  // @todo This should all be in a separate file I think.
+
   /// @brief User defined type. Holds the member variables and information about
   /// a type defined in the current scope.
   ///
@@ -16,21 +18,10 @@ namespace Vypr
     {
       Struct,
       Union,
-      Alias
+      Enum
     };
 
-    virtual ~UserDefinedType() = 0;
-  };
-
-  /// @brief Alias to a UDT. Usually created using `typedef`.
-  struct AliasUDT : public UserDefinedType
-  {
-    ~AliasUDT() = default;
-
-    /// @brief Name of the type to alias.
-    /// @todo This probably needs to be scoped so that overlapping types don't
-    /// retroactively change a previous variable.
-    std::wstring alias;
+    ~UserDefinedType(){};
   };
 
   /// @brief A union type for memory locations that can interpreted in multiple
@@ -38,7 +29,9 @@ namespace Vypr
   /// @todo Implement member table.
   struct UnionUDT : public UserDefinedType
   {
-    ~UnionUDT() = default;
+    ~UnionUDT()
+    {
+    }
   };
 
   /// @brief A struct type for multi-variable objects.
@@ -46,18 +39,33 @@ namespace Vypr
   /// @todo Implement bitfields.
   struct StructUDT : public UserDefinedType
   {
-    ~StructUDT() = default;
+    ~StructUDT()
+    {
+    }
   };
 
-  /// @brief Global information needed during the creation of the abstract
-  /// syntax tree.
+  struct EnumUDT : public UserDefinedType
+  {
+    ~EnumUDT()
+    {
+    }
+  };
+
+  /**
+   * @brief Global information needed during the creation of the abstract
+   * syntax tree.
+   */
   struct ASTContext
   {
-    /// @brief Table of symbol names to the types they represent. This applies
-    /// to any variables and functions.
+    /**
+     * @brief Table of symbol names to the types they represent. This applies
+     * to any variables and functions.
+     */
     TypeTable typeTable;
 
-    /// @brief Table of user defined types to the structures they represent.
+    /**
+     * @brief Table of user defined types to the structures they represent.
+     */
     SymbolTable<UserDefinedType> userDefinedTypeTable;
 
     /**
@@ -65,7 +73,8 @@ namespace Vypr
      * @param symbol Name of the symbol that has an associated type.
      * @returns The type of the symbol if it exists and `nullptr` otherwise.
      */
-    std::shared_ptr<StorageType> GetSymbolType(const std::wstring& symbol) const {
+    std::shared_ptr<StorageType> GetSymbolType(const std::wstring &symbol) const
+    {
       // @todo Use the user-defined type table to decipher types.
       return typeTable.GetSymbol(symbol);
     }

@@ -75,10 +75,7 @@ namespace Vypr
     /// @param context Current IR context for symbol storage and code gen.
     /// @return IR type mapped to the current AST type.
     /// @todo Remove default implementation.
-    virtual llvm::Type *GetIRType(Context &context) const
-    {
-      return nullptr;
-    }
+    virtual llvm::Type *GetIRType(Context &context) const;
 
     /// @brief Get the type of type that is stored.
     /// @return The meta type of the type stored.
